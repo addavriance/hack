@@ -58,9 +58,9 @@ const Header = () => {
                                 </div>
                             ) : isAuthenticated ? (
                                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-muted-foreground">
-                    Welcome, {user?.username}
-                  </span>
+                                    <span className="text-sm text-muted-foreground">
+                                        Welcome, {user?.username}
+                                    </span>
                                     <Button
                                         variant="outline"
                                         size="sm"

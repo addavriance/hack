@@ -25,7 +25,7 @@ const EditAgentModal = ({ agent, onClose, onUpdate }) => {
         }))
     }
 
-    const downloadDockerCompose = () => {
+    const downloadDockerCompose = () => { // todo: mock данные, использовать отдельный эндпоинт для сборки компоуса с апи
         const dockerCompose = `version: '3.8'
 services:
   network-agent:

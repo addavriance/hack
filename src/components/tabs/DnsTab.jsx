@@ -41,7 +41,7 @@ const DnsTab = ({ data, loading, error, onRetry }) => {
                 <div className="space-y-2">
                     {records.map((record, index) => (
                         <div key={index} className="flex items-center space-x-2 p-2 bg-muted rounded">
-                            <span className="font-mono text-sm bg-background px-2 py-1 rounded text-xs mt-1">
+                            <span className="font-mono bg-background px-2 py-1 rounded text-xs mt-1">
                                 {type}
                             </span>
                             <code className="text-sm flex-1">{record}</code>
