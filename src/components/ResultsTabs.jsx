@@ -6,6 +6,7 @@ import PingTab from './tabs/PingTab'
 import TcpTab from './tabs/TcpTab'
 import UdpTab from './tabs/UdpTab'
 import DnsTab from './tabs/DnsTab'
+import TracerouteTab from "./tabs/TracerouteTab.jsx";
 
 const ResultsTabs = ({ results, onFetchTabData }) => {
     const [activeTab, setActiveTab] = useState('info')
@@ -17,7 +18,8 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         ping: results.ping,
         tcp: results.tcp,
         udp: results.udp,
-        dns: results.dns
+        dns: results.dns,
+        traceroute: results.traceroute
     })
 
     // сброс при новом запросе
@@ -28,7 +30,8 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
             ping: results.ping,
             tcp: results.tcp,
             udp: results.udp,
-            dns: results.dns
+            dns: results.dns,
+            traceroute: results.traceroute
         })
         setLoadingTabs({})
         setTabErrors({})
@@ -39,6 +42,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         { id: 'info', label: 'Basic Info', component: InfoTab },
         { id: 'http', label: 'HTTP(S)', component: HttpTab },
         { id: 'ping', label: 'Ping', component: PingTab },
+        { id: 'traceroute', label: 'Traceroute', component: TracerouteTab },
         { id: 'tcp', label: 'TCP', component: TcpTab },
         { id: 'udp', label: 'UDP', component: UdpTab },
         { id: 'dns', label: 'DNS', component: DnsTab }

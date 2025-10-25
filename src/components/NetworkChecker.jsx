@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
+import React, {useState, useRef} from 'react'
+import {Card, CardContent, CardHeader, CardTitle} from './ui/card'
+import {Button} from './ui/button'
+import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
-import { Scan, ArrowDown } from 'lucide-react'
+import {Scan, ArrowDown} from 'lucide-react'
 
 const NetworkChecker = () => {
     const [target, setTarget] = useState('')
@@ -104,7 +104,8 @@ const NetworkChecker = () => {
                 ping: null,
                 tcp: null,
                 udp: null,
-                dns: null
+                dns: null,
+                traceroute: null,
             })
             setIsLoading(false)
         }, 1000)
@@ -199,7 +200,6 @@ const NetworkChecker = () => {
                         server: 'gws'
                     }
                 ]
-
             case 'ping':
                 const avgTime = Math.floor(Math.random() * 100) + 20
                 return [
@@ -224,7 +224,122 @@ const NetworkChecker = () => {
                         ip: getRandomIp()
                     }
                 ]
-
+            case 'traceroute':
+                const baseIP = target.includes('.') ? target.split('.').slice(0, 3).join('.') + '.' : '142.251.42.'
+                return [
+                    {
+                        location: 'California, US',
+                        target: target,
+                        totalTime: `${Math.floor(Math.random() * 200) + 100}ms`,
+                        hops: [
+                            {
+                                ip: '192.168.1.1',
+                                hostname: 'router.local',
+                                country: 'Local',
+                                time: '1ms',
+                                asn: null,
+                                isp: 'Local Network'
+                            },
+                            {
+                                ip: '10.0.0.1',
+                                hostname: 'gateway.isp.com',
+                                country: 'United States',
+                                time: '15ms',
+                                asn: 'AS12345',
+                                isp: 'ISP Network'
+                            },
+                            {
+                                ip: '203.0.113.1',
+                                hostname: 'core1.lax.isp.net',
+                                country: 'United States',
+                                time: '25ms',
+                                asn: 'AS12345',
+                                isp: 'ISP Backbone'
+                            },
+                            {
+                                ip: '198.51.100.1',
+                                hostname: 'peer1.sjc.net',
+                                country: 'United States',
+                                time: '35ms',
+                                asn: 'AS64512',
+                                isp: 'Tier 1 Provider'
+                            },
+                            {
+                                ip: '203.0.113.50',
+                                hostname: 'ix-la.us.ix.net',
+                                country: 'United States',
+                                time: '45ms',
+                                asn: 'AS64513',
+                                isp: 'Internet Exchange'
+                            },
+                            {
+                                ip: `${baseIP}${Math.floor(Math.random() * 255)}`,
+                                hostname: target.includes('.') ? target : `${target}.google.com`,
+                                country: 'United States',
+                                time: `${Math.floor(Math.random() * 30) + 50}ms`,
+                                asn: 'AS15169',
+                                isp: 'Google LLC',
+                                packetLoss: '0%'
+                            }
+                        ]
+                    },
+                    {
+                        location: 'Germany',
+                        target: target,
+                        totalTime: `${Math.floor(Math.random() * 300) + 200}ms`,
+                        hops: [
+                            {
+                                ip: '192.168.1.1',
+                                hostname: 'router.local',
+                                country: 'Local',
+                                time: '1ms',
+                                asn: null,
+                                isp: 'Local Network'
+                            },
+                            {
+                                ip: '10.0.0.1',
+                                hostname: 'gateway.isp.de',
+                                country: 'Germany',
+                                time: '10ms',
+                                asn: 'AS54321',
+                                isp: 'German ISP'
+                            },
+                            {
+                                ip: '193.110.1.1',
+                                hostname: 'core1.fra.de.net',
+                                country: 'Germany',
+                                time: '25ms',
+                                asn: 'AS54321',
+                                isp: 'German Backbone'
+                            },
+                            {
+                                ip: '212.1.2.3',
+                                hostname: 'transatlantic.cogent.net',
+                                country: 'Germany',
+                                time: '85ms',
+                                asn: 'AS174',
+                                isp: 'Cogent Communications'
+                            },
+                            {
+                                ip: '2001:db8::1',
+                                hostname: 'us-gw.ix.net',
+                                country: 'United States',
+                                time: '120ms',
+                                asn: 'AS64514',
+                                isp: 'Transit Provider'
+                            },
+                            {
+                                ip: `${baseIP}${Math.floor(Math.random() * 255)}`,
+                                hostname: target.includes('.') ? target : `${target}.google.com`,
+                                country: 'United States',
+                                time: `${Math.floor(Math.random() * 50) + 150}ms`,
+                                asn: 'AS15169',
+                                isp: 'Google LLC',
+                                packetLoss: '0%'
+                            }
+                        ]
+                    }
+                ]
             case 'tcp':
                 return [
                     {
@@ -288,9 +403,10 @@ const NetworkChecker = () => {
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
             <div className="max-w-md mx-auto space-y-6">
                 <div className="relative">
-                    <Scan className="h-24 w-24 text-muted-foreground/40 mx-auto mb-4" />
+                    <Scan className="h-24 w-24 text-muted-foreground/40 mx-auto mb-4"/>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin"></div>
+                        <div
+                            className="w-16 h-16 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin"></div>
                     </div>
                 </div>
 
@@ -336,7 +452,8 @@ const NetworkChecker = () => {
                                         <p className="text-sm text-destructive">{targetError}</p>
                                     )}
                                     <p className="text-xs text-muted-foreground">
-                                        Tip: Type <kbd className="px-1 py-0.5 bg-muted rounded text-xs">:</kbd> to quickly jump to port field
+                                        Tip: Type <kbd className="px-1 py-0.5 bg-muted rounded text-xs">:</kbd> to
+                                        quickly jump to port field
                                     </p>
                                 </div>
 
@@ -362,7 +479,8 @@ const NetworkChecker = () => {
                             >
                                 {isLoading ? (
                                     <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        <div
+                                            className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                         Checking...
                                     </>
                                 ) : (
@@ -383,7 +501,7 @@ const NetworkChecker = () => {
                         />
                     </div>
                 ) : (
-                    <EmptyResultsPlaceholder />
+                    <EmptyResultsPlaceholder/>
                 )}
             </div>
         </div>
