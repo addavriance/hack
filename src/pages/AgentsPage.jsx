@@ -51,7 +51,7 @@ const AgentsPage = () => {
             createdAt: new Date().toISOString()
         }
         setAgents(prev => [...prev, agent])
-        setShowCreateModal(false)
+        // setShowCreateModal(false)
     }
 
     return (
