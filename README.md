@@ -1,16 +1,98 @@
-# React + Vite
+# Lvalue - Сервис проверки хостов и DNS резолвинга
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=white&style=for-the-badge)
+![Vite](https://img.shields.io/badge/-Vite-646CFF?logo=vite&logoColor=white&style=for-the-badge)
+![Tailwind](https://img.shields.io/badge/-Tailwind-06B6D4?logo=tailwindcss&logoColor=white&style=for-the-badge)
 
-Currently, two official plugins are available:
+## О проекте
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Lvalue - веб-сервис для комплексной проверки сетевой инфраструктуры. Выполняет сетевые диагностики и DNS проверки для сайтов, IP-адресов и хостов.
 
-## React Compiler
+## Функциональность
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **HTTP/HTTPS проверки** - статус коды, заголовки, время ответа
+- **TCP/UDP порты** - проверка доступности портов
+- **Ping** - проверка доступности и задержек
+- **DNS записи** - A, AAAA, MX, NS, TXT записи
+- **Traceroute** - трассировка маршрута до сервера
+- **Геолокация** - определение местоположения серверов
 
-## Expanding the ESLint configuration
+## Система агентов
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Добавление собственных агентов** (для зарегистрированных пользователей):
+- Создание кастомных агентов через веб-интерфейс
+- Ввод названия, IP-адреса и порта агента
+- Автоматическая генерация Docker Compose конфигурации
+- Использование собственных агентов для глубокого сканирования (nmap)
+
+## Технологии
+
+**Фронтенд:**
+- React 19.1.1
+- Vite 7.1.7
+- Tailwind CSS 3.4.18
+- React Router DOM 7.9.4
+- TypeScript
+
+**Утилиты:**
+- lucide-react - иконки
+- pigeon-maps - карты
+
+## Установка и запуск
+
+```bash
+# Установка зависимостей
+npm install
+
+# Запуск dev сервера
+npm run dev
+
+# Сборка проекта
+npm run build
+
+# Превью продакшен версии
+npm run preview
+
+# Линтинг кода
+npm run lint
+```
+
+## Деплой
+
+```bash
+# Деплой на GitHub Pages
+npm run deploy
+```
+
+Проект автоматически публикуется на: **https://checkhost.linkoo.dev**
+
+## Структура проекта
+
+```
+lvalue/
+├── src/                 # Исходный код
+├── dist/               # Собранные файлы (продакшен)
+├── public/             # Статические файлы
+└── package.json        # Конфигурация проекта
+```
+
+## Особенности
+
+- **TypeScript** - строгая типизация
+- **ESLint** - контроль качества кода
+- **Tailwind CSS** - утилитарные стили
+- **Pigeon Maps** - легковесные карты
+- **Lucide Icons** - современные иконки
+
+## Скрипты
+
+- `dev` - разработка с горячей перезагрузкой
+- `build` - сборка для продакшена
+- `preview` - предпросмотр собранного проекта
+- `lint` - проверка кода
+- `predeploy` - подготовка к деплою
+- `deploy` - публикация на GitHub Pages
+
+---
+
+Разработано командой Lvalue
