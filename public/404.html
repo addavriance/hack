@@ -2,20 +2,14 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Lvalue - Redirecting</title>
+    <title>Linkoo - Page Not Found</title>
+    <meta http-equiv="refresh" content="0; url=/"/>
     <script>
-        const segmentCount = 1;
-        const l = window.location;
-        l.replace(
-            l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-            l.pathname.split('/').slice(0, 1 + segmentCount).join('/') + '/?p=/' +
-            l.pathname.slice(1).split('/').slice(segmentCount).join('/').replace(/&/g, '~and~') +
-            (l.search ? '&q=' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-            l.hash
-        );
+        window.location.href = '/';
     </script>
 </head>
 <body>
-<h1>Redirecting...</h1>
+<h1>Page Not Found</h1>
+<p>Redirecting to <a href="/">home page</a>...</p>
 </body>
 </html>
