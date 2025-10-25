@@ -1,5 +1,6 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import MapView from "../MapView.jsx";
 
 const InfoTab = ({ data, loading, error, onRetry, target }) => {
     if (loading) {
@@ -67,15 +68,14 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
                     <CardTitle>Location Map</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="bg-muted rounded-lg h-64 flex items-center justify-center">
-                        <div className="text-center">
-                            <p className="text-lg font-medium">Map View</p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                                Coordinates: {data.coordinates.lat}, {data.coordinates.lng}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                (Yandex Maps integration would go here)
-                            </p>
+                    <div className="space-y-4">
+                        {/* Карта */}
+                            <MapView
+                                coordinates={data.coordinates}
+                                location={`${data.city}, ${data.country}`}
+                            />
+                        <div className="text-sm text-muted-foreground text-center">
+                            Coordinates: {data.coordinates.lat.toFixed(4)}, {data.coordinates.lng.toFixed(4)}
                         </div>
                     </div>
                 </CardContent>
