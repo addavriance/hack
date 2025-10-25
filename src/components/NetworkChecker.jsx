@@ -446,30 +446,32 @@ const NetworkChecker = () => {
     }
 
     const EmptyResultsPlaceholder = () => (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-            <div className="max-w-md mx-auto space-y-6">
-                <div className="relative">
-                    <Scan className="h-24 w-24 text-muted-foreground/40 mx-auto mb-4"/>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div
-                            className="w-16 h-16 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin"></div>
+        <Card className="mt-4 mb-10 max-w-[70rem] mx-auto">
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
+                <div className="max-w-md mx-auto space-y-6">
+                    <div className="relative">
+                        <Scan className="h-24 w-24 text-muted-foreground/40 mx-auto mb-4"/>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div
+                                className="w-16 h-16 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin"></div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <h3 className="text-2xl font-semibold text-foreground">
+                            Ready to Diagnose
+                        </h3>
+                        <p className="text-muted-foreground text-lg">
+                            Enter a website URL or IP address above to start network diagnostics
+                        </p>
+                        <p className="text-sm text-muted-foreground/70">
+                            Comprehensive results including HTTP checks, ping tests, port scanning,
+                            DNS records, and geographical data will appear here
+                        </p>
                     </div>
                 </div>
-
-                <div className="space-y-3">
-                    <h3 className="text-2xl font-semibold text-foreground">
-                        Ready to Diagnose
-                    </h3>
-                    <p className="text-muted-foreground text-lg">
-                        Enter a website URL or IP address above to start network diagnostics
-                    </p>
-                    <p className="text-sm text-muted-foreground/70">
-                        Comprehensive results including HTTP checks, ping tests, port scanning,
-                        DNS records, and geographical data will appear here
-                    </p>
-                </div>
             </div>
-        </div>
+        </Card>
     )
 
     return (
