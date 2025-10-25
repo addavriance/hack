@@ -47,11 +47,12 @@ class ApiService {
                 }
             }
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
             const data = await response.json();
+
+            if (!response.ok) {
+                const details = data && data.detail || `HTTP error! status: ${response.status}`
+                throw new Error(details);
+            }
 
             if (endpoint === '/login') {
                 if (data && data.login_session_token) {

@@ -5,6 +5,10 @@ import Header from './components/Header'
 import NetworkChecker from './components/NetworkChecker'
 import AgentsPage from './pages/AgentsPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import Footer from "./components/Footer.jsx";
+import AboutPage from "./pages/AboutPage.jsx";
+import QuickExamples from "./components/QuickExamples.jsx";
+import Features from "./components/Features.jsx";
 
 function App() {
     return (
@@ -14,7 +18,13 @@ function App() {
                     <Header />
                     <main>
                         <Routes>
-                            <Route path="/" element={<NetworkChecker />} />
+                            <Route path="/" element={
+                                <>
+                                    <NetworkChecker id="diagnostics" />
+                                    <Features id="features"/>
+                                    <QuickExamples />
+                                </>
+                            } />
                             <Route
                                 path="/agents"
                                 element={
@@ -23,8 +33,10 @@ function App() {
                                     </ProtectedRoute>
                                 }
                             />
+                            <Route path="/about" element={<AboutPage />} />
                         </Routes>
                     </main>
+                    <Footer/>
                 </div>
             </Router>
         </AuthProvider>

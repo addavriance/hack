@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuthContext } from '../contexts/AuthContext'
 import { Button } from './ui/button'
 import LoginModal from './modals/LoginModal'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Network } from 'lucide-react'
 
 const Header = () => {
     const { isAuthenticated, user, logout, loading } = useAuthContext()
@@ -27,14 +27,23 @@ const Header = () => {
                 <div className="container mx-auto px-4 py-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-8">
-                            <Link to="/" className="text-xl font-bold">
-                                Network Diagnostics
+                            <Link to="/" className="flex items-center space-x-2 text-xl font-bold">
+                                <Network className="h-6 w-6 text-primary" />
+                                <span className="text-2xl">Lvalue</span>
                             </Link>
 
                             {isAuthenticated && (
                                 <nav className="flex items-center space-x-6">
                                     <NavLink to="/">Diagnostics</NavLink>
                                     <NavLink to="/agents">Agents</NavLink>
+                                    <NavLink to="/about">About</NavLink>
+                                </nav>
+                            )}
+
+                            {!isAuthenticated && !loading && (
+                                <nav className="flex items-center space-x-6">
+                                    <NavLink to="/">Diagnostics</NavLink>
+                                    <NavLink to="/about">About</NavLink>
                                 </nav>
                             )}
                         </div>
