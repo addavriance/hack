@@ -9,6 +9,7 @@ import Footer from "./components/Footer.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import QuickExamples from "./components/QuickExamples.jsx";
 import Features from "./components/Features.jsx";
+import DocumentationPage from "./pages/DocumentationPage.jsx";
 
 function App() {
     return (
@@ -34,6 +35,7 @@ function App() {
                                 }
                             />
                             <Route path="/about" element={<AboutPage />} />
+                            <Route path="/documentation" element={<DocumentationPage />} />
                         </Routes>
                     </main>
                     <Footer/>

@@ -37,6 +37,7 @@ const Header = () => {
                                     <NavLink to="/">Diagnostics</NavLink>
                                     <NavLink to="/agents">Agents</NavLink>
                                     <NavLink to="/about">About</NavLink>
+                                    <NavLink to="/documentation">Documentation</NavLink>
                                 </nav>
                             )}
 
@@ -44,6 +45,7 @@ const Header = () => {
                                 <nav className="flex items-center space-x-6">
                                     <NavLink to="/">Diagnostics</NavLink>
                                     <NavLink to="/about">About</NavLink>
+                                    <NavLink to="/documentation">Documentation</NavLink>
                                 </nav>
                             )}
                         </div>
