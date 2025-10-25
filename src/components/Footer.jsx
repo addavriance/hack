@@ -48,9 +48,8 @@ const Footer = () => {
                         <ul className="space-y-2 text-sm">
                             <li>
                             <a
-                                    href="#"
+                                    href="/documentation"
                                     className="text-muted-foreground hover:text-primary transition-colors"
-                                    onClick={(e) => e.preventDefault()}
                                 >
                                     Documentation
                                 </a>
