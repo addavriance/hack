@@ -235,7 +235,7 @@ services:
                     onClose={() => setEditingAgent(null)}
                     onUpdate={(updates) => {
                         onUpdate(editingAgent.id, updates)
-                        setEditingAgent(null)
+                        // setEditingAgent(null)
                     }}
                 />
             )}
