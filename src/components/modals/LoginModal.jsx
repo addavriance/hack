@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuthContext } from '../../contexts/AuthContext'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { AlertCircle, Loader2, CheckCircle2 } from 'lucide-react'
 
 const LoginModal = ({ onClose }) => {
-    const { login, register, loading, error } = useAuth()
+    const { login, register, loading, error } = useAuthContext()
     const [isLogin, setIsLogin] = useState(true)
     const [registrationSuccess, setRegistrationSuccess] = useState(false)
     const [formData, setFormData] = useState({
@@ -156,7 +156,7 @@ const LoginModal = ({ onClose }) => {
                                 type="button"
                                 onClick={handleSwitchMode}
                                 className="text-sm text-primary hover:underline"
-                                disabled={!!loading}
+                                disabled={loading}
                             >
                                 {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
                             </button>

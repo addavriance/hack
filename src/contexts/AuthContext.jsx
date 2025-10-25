@@ -1,17 +1,17 @@
-import React, { createContext, useState, useContext } from 'react'
-import { apiService } from '../services/api'
+import React, {createContext, useState, useContext, useMemo} from 'react'
+import {apiService} from '../services/api'
 
-const AuthContext = createContext()
+const AuthContext = createContext(undefined)
 
-export const useAuth = () => {
+export const useAuthContext = () => {
     const context = useContext(AuthContext)
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider')
+    if (context === undefined) {
+        throw new Error('useAuthContext must be used within an AuthProvider')
     }
     return context
 }
 
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null)
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await apiService.login(username, password)
 
-            // После успешного логина устанавливаем пользователя
             const userData = {
                 username,
                 login_session_uid: response.login_session_uid
@@ -32,11 +31,11 @@ export const AuthProvider = ({ children }) => {
             setUser(userData)
             setIsAuthenticated(true)
             localStorage.setItem('user', JSON.stringify(userData))
-            return { success: true }
+            return {success: true}
         } catch (error) {
             const errorMessage = error.message || 'Login failed'
             setError(errorMessage)
-            return { success: false, error: errorMessage }
+            return {success: false, error: errorMessage}
         } finally {
             setLoading(false)
         }
@@ -48,12 +47,11 @@ export const AuthProvider = ({ children }) => {
 
         try {
             await apiService.register(username, password)
-            // Регистрация успешна, но не логиним автоматически
-            return { success: true }
+            return {success: true}
         } catch (error) {
             const errorMessage = error.message || 'Registration failed'
             setError(errorMessage)
-            return { success: false, error: errorMessage }
+            return {success: false, error: errorMessage}
         } finally {
             setLoading(false)
         }
@@ -67,7 +65,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('user')
     }
 
-    // Проверяем наличие пользователя в localStorage при загрузке
     React.useEffect(() => {
         const savedUser = localStorage.getItem('user')
         const savedToken = localStorage.getItem('authToken')
@@ -80,16 +77,18 @@ export const AuthProvider = ({ children }) => {
         }
     }, [])
 
+    const contextValue = useMemo(() => ({
+        user,
+        isAuthenticated,
+        loading,
+        error,
+        login,
+        register,
+        logout
+    }), [user, isAuthenticated, loading, error])
+
     return (
-        <AuthContext.Provider value={{
-            user,
-            isAuthenticated,
-            loading,
-            error,
-            login,
-            register,
-            logout
-        }}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     )

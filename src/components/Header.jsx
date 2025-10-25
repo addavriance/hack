@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuthContext } from '../contexts/AuthContext'
 import { Button } from './ui/button'
 import LoginModal from './modals/LoginModal'
 import { Loader2 } from 'lucide-react'
 
 const Header = () => {
-    const { isAuthenticated, user, logout, loading } = useAuth()
+    const { isAuthenticated, user, logout, loading } = useAuthContext()
     const [showLoginModal, setShowLoginModal] = useState(false)
     const location = useLocation()
 
