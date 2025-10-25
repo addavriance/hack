@@ -1,67 +1,113 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import AgentsTable from '../components/AgentsTable'
 import CreateAgentModal from '../components/modals/CreateAgentModal'
+import { apiService } from '../services/api'
+import { useAuthContext } from '../contexts/AuthContext'
+import { AlertCircle, RefreshCw } from 'lucide-react'
 
 const AgentsPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false)
-    const [agents, setAgents] = useState([ // todo: mock данные, заменить на api
-        {
-            id: 1,
-            name: 'Primary Server',
-            ip: '192.168.1.100',
-            port: '8080',
-            status: 'active',
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: 2,
-            name: 'Backup Node',
-            ip: '192.168.1.101',
-            port: '8081',
-            status: 'inactive',
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: 3,
-            name: 'Monitoring Agent',
-            ip: '192.168.1.102',
-            port: '8082',
-            status: 'suspended',
-            createdAt: new Date().toISOString()
-        }
-    ])
+    const [agents, setAgents] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
+    const { isAuthenticated } = useAuthContext()
 
-    const handleAgentUpdate = (agentId, updates) => {
-        setAgents(prev => prev.map(agent =>
-            agent.id === agentId ? { ...agent, ...updates } : agent
-        ))
+    const loadAgents = async () => {
+        if (!isAuthenticated) return
+
+        setLoading(true)
+        setError('')
+        try {
+            const agentsData = await apiService.getAgents()
+            setAgents(agentsData)
+        } catch (err) {
+            setError(err.message || 'Failed to load agents')
+            console.error('Error loading agents:', err)
+        } finally {
+            setLoading(false)
+        }
     }
 
-    const handleAgentDelete = (agentId) => {
-        setAgents(prev => prev.filter(agent => agent.id !== agentId))
+    useEffect(() => {
+        loadAgents()
+    }, [isAuthenticated])
+
+    const handleAgentCreate = async (newAgent) => {
+        try {
+            const createdAgent = await apiService.createAgent(newAgent)
+            setAgents(prev => [...prev, createdAgent])
+            return { success: true, data: createdAgent }
+        } catch (err) {
+            return { success: false, error: err }
+        }
     }
 
-    const handleAgentCreate = (newAgent) => {
-        const agent = {
-            ...newAgent,
-            id: Date.now(),
-            status: 'inactive',
-            createdAt: new Date().toISOString()
+    const handleAgentUpdate = async (agentId, updates) => {
+        try {
+            const updatedAgent = await apiService.updateAgent(agentId, updates)
+            setAgents(prev => prev.map(agent =>
+                agent.id === agentId ? updatedAgent : agent
+            ))
+            return { success: true }
+        } catch (err) {
+            return { success: false, error: err }
         }
-        setAgents(prev => [...prev, agent])
-        // setShowCreateModal(false)
+    }
+
+    const handleAgentDelete = async (agentId) => {
+        try {
+            await apiService.deleteAgent(agentId)
+            setAgents(prev => prev.filter(agent => agent.id !== agentId))
+            return { success: true }
+        } catch (err) {
+            return { success: false, error: err.message }
+        }
+    }
+
+    const handleRefresh = () => {
+        loadAgents()
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+                    <p className="text-muted-foreground">
+                        Please log in to manage your agents.
+                    </p>
+                </div>
+            </div>
+        )
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 min-h-[45rem]">
+        <div className="container mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold">Agents Management</h1>
-                <Button onClick={() => setShowCreateModal(true)}>
-                    Add New Agent
-                </Button>
+                <div className="flex items-center space-x-2">
+                    <Button
+                        variant="outline"
+                        onClick={handleRefresh}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => setShowCreateModal(true)}>
+                        Add New Agent
+                    </Button>
+                </div>
             </div>
+
+            {error && (
+                <div className="bg-destructive/15 text-destructive p-3 rounded-md flex items-center space-x-2 mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{error}</span>
+                </div>
+            )}
 
             <Card>
                 <CardHeader>
@@ -70,8 +116,10 @@ const AgentsPage = () => {
                 <CardContent className="p-0">
                     <AgentsTable
                         agents={agents}
+                        loading={loading}
                         onUpdate={handleAgentUpdate}
                         onDelete={handleAgentDelete}
+                        onRefresh={handleRefresh}
                     />
                 </CardContent>
             </Card>

@@ -1,6 +1,5 @@
-import React, {useState} from 'react'
-import {Button} from './ui/button'
-import {Input} from './ui/input'
+import React, { useState } from 'react'
+import { Button } from './ui/button'
 import EditAgentModal from './modals/EditAgentModal'
 import DeleteAgentModal from './modals/DeleteAgentModal'
 import {
@@ -11,13 +10,15 @@ import {
     Download,
     Eye,
     EyeOff,
-    Circle
+    Circle,
+    Loader2
 } from 'lucide-react'
 
-const AgentsTable = ({agents, onUpdate, onDelete}) => {
+const AgentsTable = ({ agents, loading, onUpdate, onDelete, onRefresh }) => {
     const [editingAgent, setEditingAgent] = useState(null)
     const [deletingAgent, setDeletingAgent] = useState(null)
     const [showIp, setShowIp] = useState({})
+    const [updatingAgents, setUpdatingAgents] = useState({})
 
     const toggleIpVisibility = (agentId) => {
         setShowIp(prev => ({
@@ -26,35 +27,36 @@ const AgentsTable = ({agents, onUpdate, onDelete}) => {
         }))
     }
 
-    const handleStatusToggle = (agent) => {
-        const newStatus = agent.status === 'active' ? 'suspended' : 'active'
-        onUpdate(agent.id, {status: newStatus})
-    }
+    const handleStatusToggle = async (agent) => {
+        setUpdatingAgents(prev => ({ ...prev, [agent.id]: true }))
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'active':
-                return 'text-green-500 fill-green-500'
-            case 'inactive':
-                return 'text-gray-500 fill-gray-500'
-            case 'suspended':
-                return 'text-yellow-500 fill-yellow-500'
-            default:
-                return 'text-gray-500 fill-gray-500'
+        const result = await onUpdate(agent.id, {
+            name: agent.name,
+            ip: agent.ip,
+            port: agent.port,
+            is_suspended: !agent.is_suspended
+        }
+        )
+
+        setUpdatingAgents(prev => ({ ...prev, [agent.id]: false }))
+
+        if (!result.success) {
+            alert(`Failed to update agent: ${result.error}`)
         }
     }
 
-    const getStatusText = (status) => {
-        switch (status) {
-            case 'active':
-                return 'Active'
-            case 'inactive':
-                return 'Inactive'
-            case 'suspended':
-                return 'Suspended'
-            default:
-                return status
-        }
+    const getStatusColor = (status, isSuspended) => {
+        if (isSuspended) return 'text-yellow-500 fill-yellow-500'
+        if (status === 'up') return 'text-green-500 fill-green-500'
+        if (status === 'down') return 'text-red-500 fill-red-500'
+        return 'text-gray-500 fill-gray-500'
+    }
+
+    const getStatusText = (status, isSuspended) => {
+        if (isSuspended) return 'Suspended'
+        if (status === 'up') return 'Online'
+        if (status === 'down') return 'Offline'
+        return status
     }
 
     const formatDate = (dateString) => {
@@ -65,22 +67,13 @@ const AgentsTable = ({agents, onUpdate, onDelete}) => {
         })
     }
 
-    const downloadDockerCompose = (agent) => { // todo: mock инфа, потом связать с api
-        const dockerCompose = `version: '3.8'
-services:
-  network-agent:
-    image: your-company/network-agent:latest
-    container_name: ${agent.name.replace(/\s+/g, '-').toLowerCase()}
-    environment:
-      - AGENT_NAME=${agent.name}
-      - SERVER_HOST=${window.location.hostname}
-      - AGENT_IP=${agent.ip}
-      - AGENT_PORT=${agent.port}
-    ports:
-      - "${agent.port}:${agent.port}"
-    restart: unless-stopped`
+    const downloadDockerCompose = (agent) => {
+        if (!agent.compose_file) {
+            alert('No Docker Compose file available for this agent')
+            return
+        }
 
-        const blob = new Blob([dockerCompose], {type: 'text/yaml'})
+        const blob = new Blob([agent.compose_file], { type: 'text/yaml' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -89,6 +82,15 @@ services:
         a.click()
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
+    }
+
+    if (loading) {
+        return (
+            <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                <p className="text-muted-foreground">Loading agents...</p>
+            </div>
+        )
     }
 
     if (agents.length === 0) {
@@ -160,14 +162,16 @@ services:
                             {/* Status */}
                             <td className="py-4 px-6 w-1/6">
                                 <div className="flex items-center space-x-2">
-                                    <Circle className={`h-2 w-2 ${getStatusColor(agent.status)}`}/>
-                                    <span className="truncate">{getStatusText(agent.status)}</span>
+                                    <Circle className={`h-2 w-2 ${getStatusColor(agent.status, agent.is_suspended)}`} />
+                                    <span className="truncate">
+                                        {getStatusText(agent.status, agent.is_suspended)}
+                                    </span>
                                 </div>
                             </td>
 
                             {/* Created Date */}
                             <td className="py-4 px-6 text-sm text-muted-foreground w-1/6">
-                                {formatDate(agent.createdAt)}
+                                {formatDate(agent.created_at)}
                             </td>
 
                             {/* Actions */}
@@ -179,13 +183,15 @@ services:
                                         size="sm"
                                         onClick={() => handleStatusToggle(agent)}
                                         className="h-8 w-8 p-0"
-                                        title={agent.status === 'active' ? 'Pause' : 'Resume'}
-                                        // disabled={agent.status === 'inactive'}
+                                        disabled={updatingAgents[agent.id]}
+                                        title={agent.is_suspended ? 'Resume' : 'Suspend'}
                                     >
-                                        {agent.status === 'active' ? (
-                                            <Pause className="h-4 w-4"/>
+                                        {updatingAgents[agent.id] ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : agent.is_suspended ? (
+                                            <Play className="h-4 w-4" />
                                         ) : (
-                                            <Play className="h-4 w-4"/>
+                                            <Pause className="h-4 w-4" />
                                         )}
                                     </Button>
 
@@ -233,9 +239,9 @@ services:
                 <EditAgentModal
                     agent={editingAgent}
                     onClose={() => setEditingAgent(null)}
-                    onUpdate={(updates) => {
-                        onUpdate(editingAgent.id, updates)
-                        // setEditingAgent(null)
+                    onUpdate={async (updates) => {
+                        const result = await onUpdate(editingAgent.id, updates)
+                        return result
                     }}
                 />
             )}
@@ -244,9 +250,12 @@ services:
                 <DeleteAgentModal
                     agent={deletingAgent}
                     onClose={() => setDeletingAgent(null)}
-                    onDelete={() => {
-                        onDelete(deletingAgent.id)
-                        setDeletingAgent(null)
+                    onDelete={async () => {
+                        const result = await onDelete(deletingAgent.id)
+                        if (result.success) {
+                            setDeletingAgent(null)
+                        }
+                        return result
                     }}
                 />
             )}

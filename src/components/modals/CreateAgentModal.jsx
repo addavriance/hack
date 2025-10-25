@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Download } from 'lucide-react'
+import { Download, Loader2 } from 'lucide-react'
 
 const CreateAgentModal = ({ onClose, onCreate }) => {
     const [formData, setFormData] = useState({
@@ -11,11 +11,27 @@ const CreateAgentModal = ({ onClose, onCreate }) => {
         port: '8080'
     })
     const [showDockerCompose, setShowDockerCompose] = useState(false)
+    const [createdAgent, setCreatedAgent] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        onCreate(formData)
-        setShowDockerCompose(true)
+        setLoading(true)
+        setError('')
+
+        const result = await onCreate(formData)
+
+        if (result.success) {
+            setCreatedAgent(result.data)
+            setShowDockerCompose(true)
+        } else {
+            setError(result.error)
+        }
+
+        console.log(result);
+
+        setLoading(false)
     }
 
     const handleChange = (e) => {
@@ -23,24 +39,11 @@ const CreateAgentModal = ({ onClose, onCreate }) => {
             ...prev,
             [e.target.name]: e.target.value
         }))
+        if (error) setError('')
     }
 
-    const downloadDockerCompose = () => { // todo: mock данные, использовать отдельный эндпоинт для сборки компоуса с апи
-        const dockerCompose = `version: '3.8'
-services:
-  network-agent:
-    image: your-company/network-agent:latest
-    container_name: ${formData.name.replace(/\s+/g, '-').toLowerCase()}
-    environment:
-      - AGENT_NAME=${formData.name}
-      - SERVER_HOST=${window.location.hostname}
-      - AGENT_IP=${formData.ip}
-      - AGENT_PORT=${formData.port}
-    ports:
-      - "${formData.port}:${formData.port}"
-    restart: unless-stopped`
-
-        const blob = new Blob([dockerCompose], { type: 'text/yaml' })
+    const downloadDockerCompose = () => {
+        const blob = new Blob([createdAgent.compose_file], { type: 'text/yaml' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -90,6 +93,21 @@ services:
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {error && (
+                            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md space-y-1">
+                                {Array.isArray(error) ? (
+                                    error.map((err, index) => (
+                                        <div key={index} className="flex items-start space-x-1">
+                                            <span className="font-medium capitalize">{err.field}:</span>
+                                            <span>{err.message}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div>{error.message}</div>
+                                )}
+                            </div>
+                        )}
+
                         <div>
                             <label className="text-sm font-medium">Agent Name</label>
                             <Input
@@ -98,6 +116,7 @@ services:
                                 onChange={handleChange}
                                 placeholder="Enter agent name"
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -109,6 +128,7 @@ services:
                                 onChange={handleChange}
                                 placeholder="192.168.1.100"
                                 required
+                                disabled={loading}
                             />
                         </div>
 
@@ -120,14 +140,31 @@ services:
                                 onChange={handleChange}
                                 placeholder="8080"
                                 required
+                                disabled={loading}
                             />
                         </div>
 
                         <div className="flex space-x-3">
-                            <Button type="submit" className="flex-1">
-                                Create Agent
+                            <Button
+                                type="submit"
+                                className="flex-1"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    'Create Agent'
+                                )}
                             </Button>
-                            <Button type="button" variant="outline" onClick={onClose}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onClose}
+                                disabled={loading}
+                            >
                                 Cancel
                             </Button>
                         </div>

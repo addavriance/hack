@@ -3,6 +3,7 @@ const API_BASE_URL = 'https://api.lvalue.dev';
 class ApiService {
     constructor() {
         this.token = localStorage.getItem('authToken');
+        this.uid = localStorage.getItem('uid');
     }
 
     setToken(token) {
@@ -16,7 +17,21 @@ class ApiService {
 
     clearToken() {
         this.token = null;
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('uid');
+    }
+
+    setUID(uid) {
+        this.uid = uid;
+        localStorage.setItem('uid', uid);
+    }
+
+    getUID() {
+        return this.uid;
+    }
+
+    clearUID() {
+        this.uid = null;
+        localStorage.removeItem('uid');
     }
 
     async request(endpoint, options = {}) {
@@ -29,6 +44,7 @@ class ApiService {
 
         if (this.token && endpoint !== '/register' && endpoint !== '/login') {
             headers['X-Login-Session-Token'] = this.token;
+            headers['X-Login-Session-Uid'] = this.uid;
         }
 
         const config = {
@@ -39,35 +55,67 @@ class ApiService {
         try {
             const response = await fetch(url, config);
 
-            if (endpoint === '/register') {
-                if (response.status === 201) {
-                    return { success: true };
-                } else {
-                    throw new Error(`Registration failed with status: ${response.status}`);
-                }
-            }
-
-            const data = await response.json();
-
             if (!response.ok) {
-                const details = data && data.detail || `HTTP error! status: ${response.status}`
-                throw new Error(details);
-            }
-
-            if (endpoint === '/login') {
-                if (data && data.login_session_token) {
-                    this.setToken(data.login_session_token);
-                    return data;
-                } else {
-                    throw new Error('Invalid login response');
+                if (response.status === 422) {
+                    const errorData = await response.json();
+                    const formattedErrors = this.formatValidationError(errorData);
+                    throw formattedErrors;
+                } else if (response.status === 401) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Unknown error');
                 }
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            return data;
+            return await response.json();
         } catch (error) {
             console.error('API request failed:', error);
             throw error;
         }
+    }
+
+    formatValidationError(errorData) {
+        if (errorData.detail && Array.isArray(errorData.detail)) {
+            const errorMessages = errorData.detail.map(err => {
+                const field = err.loc[err.loc.length - 1];
+
+                let message = err.msg;
+
+                if (message.startsWith('Input ')) {
+                    message = message.substring(6);
+                    message = message.charAt(0).toLowerCase() + message.slice(1);
+                }
+
+                switch (err.type) {
+                    case 'ip_v4_address':
+                        message = 'Must be a valid IPv4 address';
+                        break;
+                    case 'int_parsing':
+                        message = 'Must be a valid integer';
+                        break;
+                    case 'string_type':
+                        message = 'Must be a string';
+                        break;
+                    case 'missing':
+                        message = 'This field is required';
+                        break;
+                }
+
+                return {
+                    field: field,
+                    message: message,
+                    originalError: err
+                };
+            });
+
+            return errorMessages;
+        }
+
+        if (typeof errorData.detail === 'string') {
+            return [{ field: 'general', message: errorData.detail }];
+        }
+
+        return [{ field: 'general', message: 'Validation error' }];
     }
 
     async register(username, password) {
@@ -78,14 +126,55 @@ class ApiService {
     }
 
     async login(username, password) {
-        return this.request('/login', {
+        const response = await this.request('/login', {
             method: 'POST',
             body: JSON.stringify({ username, password }),
         });
+
+        if (response && response.login_session_token && response.login_session_uid) {
+            this.setToken(response.login_session_token);
+            this.setUID(response.login_session_uid);
+            return response;
+        }
+        throw new Error('No login session token received');
     }
 
-    // agents methods (будут работать с X-Login-Session-Token), но пока фейк роуты
-    // todo: обновить роутинг
+    async createCheck(payload) {
+        return this.request('/checks', {
+            method: 'POST',
+            body: JSON.stringify({ payload }),
+        });
+    }
+
+    async getCheck(checkUid) {
+        return this.request(`/checks/${checkUid}`);
+    }
+
+    async pollCheckResults(checkUid, maxAttempts = 10, interval = 500) {
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                const result = await this.getCheck(checkUid);
+
+                const hasResults = result.tasks.some(task => task.result !== null);
+
+                if (hasResults) {
+                    return result;
+                }
+
+                if (attempt < maxAttempts - 1) {
+                    await new Promise(resolve => setTimeout(resolve, interval + Math.random() * 200));
+                }
+            } catch (error) {
+                console.error(`Polling attempt ${attempt + 1} failed:`, error);
+                if (attempt < maxAttempts - 1) {
+                    await new Promise(resolve => setTimeout(resolve, interval));
+                }
+            }
+        }
+
+        return await this.getCheck(checkUid);
+    }
+
     async getAgents() {
         return this.request('/agents');
     }
@@ -97,10 +186,10 @@ class ApiService {
         });
     }
 
-    async updateAgent(agentId, updates) {
+    async updateAgent(agentId, agentData) {
         return this.request(`/agents/${agentId}`, {
             method: 'PUT',
-            body: JSON.stringify(updates),
+            body: JSON.stringify(agentData),
         });
     }
 
@@ -109,6 +198,12 @@ class ApiService {
             method: 'DELETE',
         });
     }
+
+    // async createBasicInfoCheck(domain) {
+    //     return this.createCheck({
+    //         domain: domain
+    //     });
+    // }
 }
 
 export const apiService = new ApiService();
