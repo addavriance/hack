@@ -188,7 +188,19 @@ const NetworkChecker = () => {
                         responseTime: `${Math.floor(Math.random() * 200) + 50}ms`,
                         ip: getRandomIp(),
                         ssl: true,
-                        server: 'gws'
+                        server: 'nginx/1.18.0',
+                        headers: {
+                            'server': 'nginx/1.18.0',
+                            'content-type': 'text/html; charset=utf-8',
+                            'content-length': '1256',
+                            'connection': 'keep-alive',
+                            'cache-control': 'public, max-age=3600',
+                            'etag': 'W/"4e-1234567890"',
+                            'date': new Date().toUTCString(),
+                            'x-powered-by': 'Express',
+                            'x-frame-options': 'SAMEORIGIN',
+                            'x-content-type-options': 'nosniff'
+                        }
                     },
                     {
                         location: 'New York, US',
@@ -197,7 +209,41 @@ const NetworkChecker = () => {
                         responseTime: `${Math.floor(Math.random() * 100) + 30}ms`,
                         ip: getRandomIp(),
                         ssl: true,
-                        server: 'gws'
+                        server: 'cloudflare',
+                        headers: {
+                            'server': 'cloudflare',
+                            'content-type': 'text/html; charset=utf-8',
+                            'cf-ray': '7a8b9c0d1e2f3g4h',
+                            'cf-cache-status': 'HIT',
+                            'content-length': '1892',
+                            'connection': 'keep-alive',
+                            'cache-control': 'max-age=14400',
+                            'expires': new Date(Date.now() + 14400000).toUTCString(),
+                            'date': new Date().toUTCString(),
+                            'x-frame-options': 'SAMEORIGIN',
+                            'strict-transport-security': 'max-age=31536000; includeSubDomains'
+                        }
+                    },
+                    {
+                        location: 'London, UK',
+                        result: 'Success',
+                        code: 200,
+                        responseTime: `${Math.floor(Math.random() * 150) + 80}ms`,
+                        ip: getRandomIp(),
+                        ssl: true,
+                        server: 'Apache/2.4.41',
+                        headers: {
+                            'server': 'Apache/2.4.41 (Ubuntu)',
+                            'content-type': 'text/html; charset=UTF-8',
+                            'content-length': '2156',
+                            'connection': 'keep-alive',
+                            'cache-control': 'no-cache, private',
+                            'date': new Date().toUTCString(),
+                            'x-ua-compatible': 'IE=edge',
+                            'x-powered-by': 'PHP/8.1.0',
+                            'x-content-type-options': 'nosniff',
+                            'x-xss-protection': '1; mode=block'
+                        }
                     }
                 ]
             case 'ping':
