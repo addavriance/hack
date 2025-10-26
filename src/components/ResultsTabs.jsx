@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { RefreshCw } from 'lucide-react'
 import InfoTab from './tabs/InfoTab'
@@ -10,6 +9,7 @@ import UdpTab from './tabs/UdpTab'
 import DnsTab from './tabs/DnsTab'
 import TracerouteTab from "./tabs/TracerouteTab.jsx";
 import { debounce } from '../lib/debounce.js';
+import {Card, CardHeader, CardTitle} from "./ui/card.jsx";
 
 const ResultsTabs = ({ results, onFetchTabData }) => {
     const [activeTab, setActiveTab] = useState('info')
@@ -147,10 +147,9 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
     const activeTabData = tabs.find(tab => tab.id === activeTab)
 
     return (
-        <Card>
-            <CardContent className="p-0">
-                {/* Tab Headers */}
-                <div className="flex border-b overflow-x-auto">
+        <div>
+            {/* Tab Headers */}
+            <div className="flex border-b overflow-x-auto">
                     {tabs.map(tab => (
                         <div
                             key={tab.id}
@@ -179,10 +178,10 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                 {/* Tab Content */}
                 <div className="p-6">
                     {activeTabData && (
-                        <div className="space-y-4">
+                        <Card className="space-y-4">
                             {/* Tab Header with Refresh Button */}
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{activeTabData.label}</h3>
+                            <CardHeader>
+                                <CardTitle>{activeTabData.label}</CardTitle>
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -193,7 +192,20 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                     <RefreshCw className={`h-4 w-4 ${loadingTabs[activeTabData.id] ? 'animate-spin' : ''}`} />
                                     <span>Refresh</span>
                                 </Button>
-                            </div>
+                            </CardHeader>
+                            {/*<div className="flex items-center justify-between">*/}
+                            {/*    <h3 className="text-lg font-semibold">{activeTabData.label}</h3>*/}
+                            {/*    <Button*/}
+                            {/*        variant="outline"*/}
+                            {/*        size="sm"*/}
+                            {/*        onClick={() => debouncedRefresh(activeTabData.id)}*/}
+                            {/*        disabled={loadingTabs[activeTabData.id]}*/}
+                            {/*        className="flex items-center space-x-2"*/}
+                            {/*    >*/}
+                            {/*        <RefreshCw className={`h-4 w-4 ${loadingTabs[activeTabData.id] ? 'animate-spin' : ''}`} />*/}
+                            {/*        <span>Refresh</span>*/}
+                            {/*    </Button>*/}
+                            {/*</div>*/}
                             
                             <activeTabData.component
                                 data={tabData[activeTabData.id]}
@@ -203,11 +215,10 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                 target={results.target}
                                 port={results.port}
                             />
-                        </div>
+                        </Card>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+        </div>
     )
 }
 

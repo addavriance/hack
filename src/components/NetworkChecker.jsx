@@ -1,11 +1,11 @@
-import React, {useState, useRef, useCallback} from 'react'
+import React, {useState, useRef} from 'react'
 import {Card} from './ui/card'
 import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
 import {Scan, ArrowDown, RefreshCw} from 'lucide-react'
 import {apiService} from "../services/api.js";
-import {debounce} from "../lib/debounce.js";
+
 
 const NetworkChecker = () => {
     const [target, setTarget] = useState('')
@@ -483,50 +483,6 @@ const NetworkChecker = () => {
         }
     }
 
-    const handleRefreshAll = async () => {
-        if (!results || !results.checkUids) {
-            console.log('No results to refresh');
-            return;
-        }
-
-        setIsLoading(true);
-        setTargetError('');
-
-        try {
-            // Создаем новую GeoIP проверку (базовая проверка)
-            const geoipCheck = await apiService.createGeoIPCheck(results.target);
-            
-            console.log('Refreshed initial check result:', geoipCheck);
-
-            // Обновляем результаты с новым UID базовой проверки
-            setResults(prev => ({
-                ...prev,
-                checkUids: {
-                    geoip: geoipCheck.uid,
-                    http: null, // Сбрасываем остальные проверки
-                    ping: null,
-                    tcp: null,
-                    udp: null,
-                    dns: null,
-                    traceroute: null,
-                },
-                timestamp: new Date().toISOString(),
-            }));
-
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error refreshing initial check:', error);
-            setTargetError('Failed to refresh initial check. Please try again.');
-            setIsLoading(false);
-        }
-    }
-
-    // Debounced version of handleRefreshAll (500ms delay)
-    const debouncedRefreshAll = useCallback(
-        debounce(handleRefreshAll, 500),
-        [results, port]
-    );
-
     const EmptyResultsPlaceholder = () => (
         <Card className="mt-4 mb-10">
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
@@ -608,42 +564,11 @@ const NetworkChecker = () => {
 
                 {/* Результаты или плейсхолдер */}
                 {results ? (
-                    <div>
-                        {/* Results Header with Refresh Button */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 className="text-xl font-semibold">Diagnostic Results</h2>
-                                <div className="text-sm text-muted-foreground">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span>Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}</span>
-                                        {results.originalTarget && results.originalTarget !== results.target && (
-                                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                                Auto-corrected from: {results.originalTarget}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Last updated: {new Date(results.timestamp).toLocaleString()}
-                                </p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                onClick={debouncedRefreshAll}
-                                disabled={isLoading}
-                                className="flex items-center space-x-2"
-                            >
-                                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                                <span>Refresh All</span>
-                            </Button>
-                        </div>
-                        
-                        <ResultsTabs
-                            key={resultsKey}
-                            results={results}
-                            onFetchTabData={handleFetchTabData}
-                        />
-                    </div>
+                    <ResultsTabs
+                        key={resultsKey}
+                        results={results}
+                        onFetchTabData={handleFetchTabData}
+                    />
                 ) : (
                     <EmptyResultsPlaceholder/>
                 )}
