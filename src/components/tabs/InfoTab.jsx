@@ -41,7 +41,7 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
         </div>
     )
 
-    const AgentCard = ({ agentData, index }) => (
+    const AgentCard = ({ agentData }) => (
         <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
@@ -94,7 +94,7 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
     return (
         <div className="space-y-6">
             {data.map((agentData, index) => (
-                <AgentCard key={index} agentData={agentData} index={index} />
+                <AgentCard key={index} agentData={agentData} />
             ))}
         </div>
     )

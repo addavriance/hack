@@ -5,7 +5,8 @@ const PigeonMapView = ({ coordinates, location, height = 256, className = "" }) 
     const position = [coordinates.lat, coordinates.lng]
 
     return (
-        <div className={`w-full rounded-lg overflow-hidden border ${className}`} style={{ height: height }}>
+        <div className={`w-full rounded-lg overflow-hidden border aspect-square lg:aspect-auto ${className}`} 
+             style={{ height: height }}>
             <Map
                 center={position}
                 zoom={10}
