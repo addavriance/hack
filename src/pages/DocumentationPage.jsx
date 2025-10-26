@@ -75,7 +75,7 @@ const DocumentationPage = () => {
                             <p className="text-muted-foreground mb-4">
                                 Explore all available endpoints, test API calls, and view detailed schemas
                             </p>
-                            <Button asChild size="lg">
+                            <Button size="lg">
                                 <a
                                     href="https://api.lvalue.dev/docs"
                                     target="_blank"
