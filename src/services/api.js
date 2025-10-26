@@ -146,33 +146,44 @@ class ApiService {
         });
     }
 
+    async createIPURLCheck(url = null, type = "") {
+        const payload = {
+            type: type,
+            url: url
+        };
+
+        return this.createCheck(payload);
+    }
+
+    async createDomainCheck(domain = null, type = "") {
+        const payload = {
+            type: type,
+            domain: domain,
+        };
+
+        return this.createCheck(payload);
+    }
+
     async getCheck(checkUid) {
         return this.request(`/checks/${checkUid}`);
     }
 
-    async pollCheckResults(checkUid, maxAttempts = 10, interval = 500) {
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            try {
-                const result = await this.getCheck(checkUid);
+    async checksPolling(checkUid, callback) {
+        let retries = 0;
+        const maxRetries = 10;
 
-                const hasResults = result.tasks.some(task => task.result !== null);
+        const pollInterval = setInterval(() => {
+            const checkData = this.getCheck(checkUid);
 
-                if (hasResults) {
-                    return result;
-                }
+            callback(checkData);
 
-                if (attempt < maxAttempts - 1) {
-                    await new Promise(resolve => setTimeout(resolve, interval + Math.random() * 200));
-                }
-            } catch (error) {
-                console.error(`Polling attempt ${attempt + 1} failed:`, error);
-                if (attempt < maxAttempts - 1) {
-                    await new Promise(resolve => setTimeout(resolve, interval));
-                }
+            retries++
+
+            if (retries > maxRetries) {
+                clearInterval(pollInterval);
             }
-        }
 
-        return await this.getCheck(checkUid);
+        }, 800);
     }
 
     async getAgents() {
@@ -198,12 +209,6 @@ class ApiService {
             method: 'DELETE',
         });
     }
-
-    // async createBasicInfoCheck(domain) {
-    //     return this.createCheck({
-    //         domain: domain
-    //     });
-    // }
 }
 
 export const apiService = new ApiService();

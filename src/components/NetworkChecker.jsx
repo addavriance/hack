@@ -4,6 +4,7 @@ import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
 import {Scan, ArrowDown} from 'lucide-react'
+import {apiService} from "../services/api.js";
 
 const NetworkChecker = () => {
     const [target, setTarget] = useState('')
@@ -14,57 +15,28 @@ const NetworkChecker = () => {
     const [targetError, setTargetError] = useState('')
     const portInputRef = useRef(null)
 
-    const isValidTarget = (value) => {
-        if (!value) return false
+    const validateInput = (input) => {
+        const urlPattern = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
+        const ipPattern = /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
+        const domainPattern = /^([\w\d-]+\.)+[\w]{2,}$/i;
 
-        const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/
-        if (ipRegex.test(value)) {
-            const parts = value.split('.')
-            return parts.every(part => {
-                const num = parseInt(part, 10)
-                return num >= 0 && num <= 255
-            })
+        if (urlPattern.test(input)) {
+            if (/^https?:\/\//i.test(input)) {
+                return 'url';
+            } else if (ipPattern.test(input)) {
+                return 'ip';
+            } else if (domainPattern.test(input)) {
+                return 'domain';
+            }
         }
-
-        const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-        return domainRegex.test(value)
+        return 'string';
     }
+
 
     const handleTargetChange = (e) => {
         const value = e.target.value
         setTarget(value)
         setTargetError('')
-
-        if (value.includes(':')) {
-            const [newTarget, newPort] = value.split(':')
-
-            if (newTarget && newPort) {
-                setTarget(newTarget)
-                setPort(newPort.replace(/\D/g, ''))
-                setTimeout(() => {
-                    portInputRef.current?.focus()
-                }, 0)
-            }
-        }
-    }
-
-    const handleTargetKeyDown = (e) => {
-        if (e.key === ':') {
-            e.preventDefault()
-            const cursorPosition = e.target.selectionStart
-            const textBeforeCursor = target.slice(0, cursorPosition)
-            const textAfterCursor = target.slice(cursorPosition)
-
-            setTarget(textBeforeCursor)
-
-            if (textAfterCursor) {
-                setPort(textAfterCursor.replace(/\D/g, ''))
-            }
-
-            setTimeout(() => {
-                portInputRef.current?.focus()
-            }, 0)
-        }
     }
 
     const handlePortChange = (e) => {
@@ -78,7 +50,9 @@ const NetworkChecker = () => {
             return
         }
 
-        if (!isValidTarget(target)) {
+        const targetType = validateInput(target);
+
+        if (targetType === 'string') {
             setTargetError('Please enter a valid URL or IP address')
             return
         }
@@ -91,15 +65,20 @@ const NetworkChecker = () => {
         setIsLoading(true)
 
         setResults(null)
-        setResultsKey(prev => prev + 1)
+        setResultsKey(prev => prev + 1);
 
-        // mock инфа, потом сервис апи будет
+        const checkData = await apiService.createIPURLCheck(
+            targetType === 'ip' ? [target] : null,
+            targetType === 'url' || targetType === 'domain' ? target : null, 'geoip');
+
+        console.log(checkData);
+
         setTimeout(() => {
             setResults({
                 target,
                 port: port || 'N/A',
                 timestamp: new Date().toISOString(),
-                info: generateBasicInfo(target),
+                info: null,
                 http: null,
                 ping: null,
                 tcp: null,
@@ -111,326 +90,26 @@ const NetworkChecker = () => {
         }, 1000)
     }
 
-    const generateBasicInfo = (target) => {
-        const isIP = /^(\d{1,3}\.){3}\d{1,3}$/.test(target)
-
-        if (isIP) {
-            return {
-                ip: target,
-                hostname: 'N/A',
-                ipRange: `${target.split('.').slice(0, 3).join('.')}.0/24`,
-                asn: 'AS15169',
-                isp: 'Google LLC',
-                country: 'United States (US)',
-                region: 'California',
-                city: 'Mountain View',
-                timezone: 'America/Los_Angeles, GMT-0700',
-                localTime: new Date().toLocaleString('en-US', {
-                    timeZone: 'America/Los_Angeles',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZoneName: 'short'
-                }),
-                postalCode: '94043',
-                coordinates: {
-                    lat: 37.3861,
-                    lng: -122.0839
-                }
-            }
-        } else {
-            return {
-                ip: '142.251.42.78',
-                hostname: target,
-                ipRange: '142.251.42.0-142.251.42.255 CIDR',
-                asn: 'AS15169',
-                isp: 'Google LLC',
-                country: 'United States (US)',
-                region: 'California',
-                city: 'Mountain View',
-                timezone: 'America/Los_Angeles, GMT-0700',
-                localTime: new Date().toLocaleString('en-US', {
-                    timeZone: 'America/Los_Angeles',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZoneName: 'short'
-                }),
-                postalCode: '94043',
-                coordinates: {
-                    lat: 37.3861,
-                    lng: -122.0839
-                }
-            }
-        }
-    }
-
     const handleFetchTabData = async (tabId) => {
-        if (!results) return null
+        if (!results) return null;
 
-        return await fetchMockTabData(tabId, results.target, results.port)
-    }
+        // switch (tabId) {
+        //     case "http":
+        //         ...
+        //     case "ping":
+        //         ...
+        //     case "traceroute":
+        //         ...
+        //     case "tcp":
+        //         ...
+        //     case "udp":
+        //         ...
+        //     case "dns":
+        //         ...
 
-    const fetchMockTabData = async (tabId, target, port) => {
-        await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700))
+        // }
 
-        const getRandomIp = () => {
-            const base = target.includes('.') ? target.split('.').slice(0, 3).join('.') + '.' : '142.251.42.'
-            const fourth = Math.floor(Math.random() * 255)
-            return `${base}${fourth}`
-        }
-
-        switch (tabId) {
-            case 'http':
-                return [
-                    {
-                        location: 'California, US',
-                        result: 'Success',
-                        code: 200,
-                        responseTime: `${Math.floor(Math.random() * 200) + 50}ms`,
-                        ip: getRandomIp(),
-                        ssl: true,
-                        server: 'nginx/1.18.0',
-                        headers: {
-                            'server': 'nginx/1.18.0',
-                            'content-type': 'text/html; charset=utf-8',
-                            'content-length': '1256',
-                            'connection': 'keep-alive',
-                            'cache-control': 'public, max-age=3600',
-                            'etag': 'W/"4e-1234567890"',
-                            'date': new Date().toUTCString(),
-                            'x-powered-by': 'Express',
-                            'x-frame-options': 'SAMEORIGIN',
-                            'x-content-type-options': 'nosniff'
-                        }
-                    },
-                    {
-                        location: 'New York, US',
-                        result: 'Success',
-                        code: 200,
-                        responseTime: `${Math.floor(Math.random() * 100) + 30}ms`,
-                        ip: getRandomIp(),
-                        ssl: true,
-                        server: 'cloudflare',
-                        headers: {
-                            'server': 'cloudflare',
-                            'content-type': 'text/html; charset=utf-8',
-                            'cf-ray': '7a8b9c0d1e2f3g4h',
-                            'cf-cache-status': 'HIT',
-                            'content-length': '1892',
-                            'connection': 'keep-alive',
-                            'cache-control': 'max-age=14400',
-                            'expires': new Date(Date.now() + 14400000).toUTCString(),
-                            'date': new Date().toUTCString(),
-                            'x-frame-options': 'SAMEORIGIN',
-                            'strict-transport-security': 'max-age=31536000; includeSubDomains'
-                        }
-                    },
-                    {
-                        location: 'London, UK',
-                        result: 'Success',
-                        code: 200,
-                        responseTime: `${Math.floor(Math.random() * 150) + 80}ms`,
-                        ip: getRandomIp(),
-                        ssl: true,
-                        server: 'Apache/2.4.41',
-                        headers: {
-                            'server': 'Apache/2.4.41 (Ubuntu)',
-                            'content-type': 'text/html; charset=UTF-8',
-                            'content-length': '2156',
-                            'connection': 'keep-alive',
-                            'cache-control': 'no-cache, private',
-                            'date': new Date().toUTCString(),
-                            'x-ua-compatible': 'IE=edge',
-                            'x-powered-by': 'PHP/8.1.0',
-                            'x-content-type-options': 'nosniff',
-                            'x-xss-protection': '1; mode=block'
-                        }
-                    }
-                ]
-            case 'ping':
-                const avgTime = Math.floor(Math.random() * 100) + 20
-                return [
-                    {
-                        location: 'California, US',
-                        packetsSent: 4,
-                        packetsReceived: 4,
-                        packetLoss: '0%',
-                        minTime: `${avgTime - 10}ms`,
-                        avgTime: `${avgTime}ms`,
-                        maxTime: `${avgTime + 15}ms`,
-                        ip: getRandomIp()
-                    },
-                    {
-                        location: 'Germany',
-                        packetsSent: 4,
-                        packetsReceived: 4,
-                        packetLoss: '0%',
-                        minTime: `${avgTime + 30}ms`,
-                        avgTime: `${avgTime + 40}ms`,
-                        maxTime: `${avgTime + 60}ms`,
-                        ip: getRandomIp()
-                    }
-                ]
-            case 'traceroute':
-                const baseIP = target.includes('.') ? target.split('.').slice(0, 3).join('.') + '.' : '142.251.42.'
-                return [
-                    {
-                        location: 'California, US',
-                        target: target,
-                        totalTime: `${Math.floor(Math.random() * 200) + 100}ms`,
-                        hops: [
-                            {
-                                ip: '192.168.1.1',
-                                hostname: 'router.local',
-                                country: 'Local',
-                                time: '1ms',
-                                asn: null,
-                                isp: 'Local Network'
-                            },
-                            {
-                                ip: '10.0.0.1',
-                                hostname: 'gateway.isp.com',
-                                country: 'United States',
-                                time: '15ms',
-                                asn: 'AS12345',
-                                isp: 'ISP Network'
-                            },
-                            {
-                                ip: '203.0.113.1',
-                                hostname: 'core1.lax.isp.net',
-                                country: 'United States',
-                                time: '25ms',
-                                asn: 'AS12345',
-                                isp: 'ISP Backbone'
-                            },
-                            {
-                                ip: '198.51.100.1',
-                                hostname: 'peer1.sjc.net',
-                                country: 'United States',
-                                time: '35ms',
-                                asn: 'AS64512',
-                                isp: 'Tier 1 Provider'
-                            },
-                            {
-                                ip: '203.0.113.50',
-                                hostname: 'ix-la.us.ix.net',
-                                country: 'United States',
-                                time: '45ms',
-                                asn: 'AS64513',
-                                isp: 'Internet Exchange'
-                            },
-                            {
-                                ip: `${baseIP}${Math.floor(Math.random() * 255)}`,
-                                hostname: target.includes('.') ? target : `${target}.google.com`,
-                                country: 'United States',
-                                time: `${Math.floor(Math.random() * 30) + 50}ms`,
-                                asn: 'AS15169',
-                                isp: 'Google LLC',
-                                packetLoss: '0%'
-                            }
-                        ]
-                    },
-                    {
-                        location: 'Germany',
-                        target: target,
-                        totalTime: `${Math.floor(Math.random() * 300) + 200}ms`,
-                        hops: [
-                            {
-                                ip: '192.168.1.1',
-                                hostname: 'router.local',
-                                country: 'Local',
-                                time: '1ms',
-                                asn: null,
-                                isp: 'Local Network'
-                            },
-                            {
-                                ip: '10.0.0.1',
-                                hostname: 'gateway.isp.de',
-                                country: 'Germany',
-                                time: '10ms',
-                                asn: 'AS54321',
-                                isp: 'German ISP'
-                            },
-                            {
-                                ip: '193.110.1.1',
-                                hostname: 'core1.fra.de.net',
-                                country: 'Germany',
-                                time: '25ms',
-                                asn: 'AS54321',
-                                isp: 'German Backbone'
-                            },
-                            {
-                                ip: '212.1.2.3',
-                                hostname: 'transatlantic.cogent.net',
-                                country: 'Germany',
-                                time: '85ms',
-                                asn: 'AS174',
-                                isp: 'Cogent Communications'
-                            },
-                            {
-                                ip: '2001:db8::1',
-                                hostname: 'us-gw.ix.net',
-                                country: 'United States',
-                                time: '120ms',
-                                asn: 'AS64514',
-                                isp: 'Transit Provider'
-                            },
-                            {
-                                ip: `${baseIP}${Math.floor(Math.random() * 255)}`,
-                                hostname: target.includes('.') ? target : `${target}.google.com`,
-                                country: 'United States',
-                                time: `${Math.floor(Math.random() * 50) + 150}ms`,
-                                asn: 'AS15169',
-                                isp: 'Google LLC',
-                                packetLoss: '0%'
-                            }
-                        ]
-                    }
-                ]
-            case 'tcp':
-                return [
-                    {
-                        location: 'California, US',
-                        port: port || 443,
-                        status: 'Open',
-                        responseTime: `${Math.floor(Math.random() * 50) + 10}ms`,
-                        protocol: 'TCP',
-                        ip: getRandomIp()
-                    },
-                    {
-                        location: 'Japan',
-                        port: port || 443,
-                        status: 'Open',
-                        responseTime: `${Math.floor(Math.random() * 100) + 80}ms`,
-                        protocol: 'TCP',
-                        ip: getRandomIp()
-                    }
-                ]
-
-            case 'udp':
-                return [
-                    {
-                        location: 'California, US',
-                        port: port || 53,
-                        status: Math.random() > 0.5 ? 'Open' : 'Filtered',
-                        responseTime: 'N/A',
-                        protocol: 'UDP',
-                        ip: getRandomIp()
-                    }
-                ]
-
-            case 'dns':
-                return {
-                    A: [getRandomIp(), getRandomIp()],
-                    AAAA: ['2607:f8b0:4004:815::200e'],
-                    MX: ['10 smtp.google.com'],
-                    NS: ['ns1.google.com', 'ns2.google.com'],
-                    TXT: ['v=spf1 include:_spf.google.com ~all', 'google-site-verification=abc123'],
-                    CNAME: []
-                }
-
-            default:
-                return null
-        }
+        // return await fetchMockTabData(tabId, results.target, results.port)
     }
 
     const handleTargetKeyPress = (e) => {
@@ -448,9 +127,9 @@ const NetworkChecker = () => {
     const EmptyResultsPlaceholder = () => (
         <Card className="mt-4 mb-10 max-w-[70rem] mx-auto">
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-                <div className="max-w-md mx-auto space-y-6">
+                <div className="max-w-lg mx-auto space-y-6">
                     <div className="relative">
-                        <Scan className="h-24 w-24 text-muted-foreground/40 mx-auto mb-4"/>
+                        <Scan className="h-24 w-24 text-muted-foreground/40 mx-auto mb-4 scan-svg"/>
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div
                                 className="w-16 h-16 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin"></div>
@@ -492,7 +171,6 @@ const NetworkChecker = () => {
                                         placeholder="example.com or 192.168.1.1"
                                         value={target}
                                         onChange={handleTargetChange}
-                                        onKeyDown={handleTargetKeyDown}
                                         onKeyPress={handleTargetKeyPress}
                                         className={targetError ? 'border-destructive' : ''}
                                     />
