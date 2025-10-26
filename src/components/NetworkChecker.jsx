@@ -63,21 +63,21 @@ const NetworkChecker = () => {
         }
 
         setIsLoading(true)
-
         setResults(null)
         setResultsKey(prev => prev + 1);
 
-        const checkData = await apiService.createIPURLCheck(
-            targetType === 'ip' ? [target] : null,
-            targetType === 'url' || targetType === 'domain' ? target : null, 'geoip');
+        try {
+            // Создаем комплексную проверку
+            const checkResults = await apiService.createComprehensiveCheck(target, port);
+            
+            console.log('Check results:', checkResults);
 
-        console.log(checkData);
-
-        setTimeout(() => {
+            // Инициализируем результаты с базовой информацией
             setResults({
                 target,
                 port: port || 'N/A',
                 timestamp: new Date().toISOString(),
+                checkUids: checkResults.map(result => result.uid), // Сохраняем UID проверок
                 info: null,
                 http: null,
                 ping: null,
@@ -85,31 +85,205 @@ const NetworkChecker = () => {
                 udp: null,
                 dns: null,
                 traceroute: null,
-            })
-            setIsLoading(false)
-        }, 1000)
+            });
+
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error creating checks:', error);
+            setTargetError('Failed to create checks. Please try again.');
+            setIsLoading(false);
+        }
     }
 
     const handleFetchTabData = async (tabId) => {
-        if (!results) return null;
+        if (!results || !results.checkUids) return null;
 
-        // switch (tabId) {
-        //     case "http":
-        //         ...
-        //     case "ping":
-        //         ...
-        //     case "traceroute":
-        //         ...
-        //     case "tcp":
-        //         ...
-        //     case "udp":
-        //         ...
-        //     case "dns":
-        //         ...
+        try {
+            // Получаем данные для конкретной вкладки
+            let checkUid = null;
+            let checkType = null;
 
-        // }
+            // Определяем какой UID использовать для каждой вкладки
+            switch (tabId) {
+                case "info":
+                    // Для info используем GeoIP данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что GeoIP это 4-й элемент (индекс 3)
+                        return index === 3;
+                    });
+                    checkType = "geoip";
+                    break;
+                case "http":
+                    // Для HTTP используем HTTP данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что HTTP это 2-й элемент (индекс 1)
+                        return index === 1;
+                    });
+                    checkType = "http";
+                    break;
+                case "ping":
+                    // Для ping используем ping данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что ping это 3-й элемент (индекс 2)
+                        return index === 2;
+                    });
+                    checkType = "ping";
+                    break;
+                case "traceroute":
+                    // Для traceroute используем traceroute данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что traceroute это 5-й элемент (индекс 4)
+                        return index === 4;
+                    });
+                    checkType = "traceroute";
+                    break;
+                case "tcp":
+                    // Для TCP используем tcp_and_udp данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что TCP это 6-й элемент (индекс 5)
+                        return index === 5;
+                    });
+                    checkType = "tcp_and_udp";
+                    break;
+                case "dns":
+                    // Для DNS используем DNS данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что DNS это 1-й элемент (индекс 0)
+                        return index === 0;
+                    });
+                    checkType = "dns";
+                    break;
+                default:
+                    return null;
+            }
 
-        // return await fetchMockTabData(tabId, results.target, results.port)
+            if (!checkUid) {
+                console.warn(`No check UID found for tab: ${tabId}`);
+                return null;
+            }
+
+            // Получаем данные проверки
+            const checkData = await apiService.getCheck(checkUid);
+            
+            // Обрабатываем данные в зависимости от типа
+            return processCheckData(checkData, checkType, tabId);
+        } catch (error) {
+            console.error(`Error fetching data for tab ${tabId}:`, error);
+            throw error;
+        }
+    }
+
+    // Функция для обработки данных проверки
+    const processCheckData = (checkData, checkType, tabId) => {
+        if (!checkData || !checkData.tasks || checkData.tasks.length === 0) {
+            return null;
+        }
+
+        // Находим задачу с нужным типом
+        const task = checkData.tasks.find(t => t.payload && t.payload.type === checkType);
+        if (!task || !task.result) {
+            return null;
+        }
+
+        const result = task.result;
+
+        // Преобразуем данные в формат, ожидаемый компонентами вкладок
+        switch (tabId) {
+            case "info":
+                return processGeoIPData(result);
+            case "http":
+                return processHTTPData(result);
+            case "ping":
+                return processPingData(result);
+            case "traceroute":
+                return processTracerouteData(result);
+            case "tcp":
+                return processTCPData(result);
+            case "dns":
+                return processDNSData(result);
+            default:
+                return result;
+        }
+    }
+
+    // Обработчики для каждого типа данных
+    const processGeoIPData = (data) => {
+        if (!data.items || data.items.length === 0) return null;
+        
+        const item = data.items[0];
+        return {
+            ip: item.ip || 'N/A',
+            hostname: item.hostname || 'N/A',
+            ipRange: item.ipRange || 'N/A',
+            asn: item.asn || 'N/A',
+            isp: item.organization || 'N/A',
+            country: item.country || 'N/A',
+            region: item.region || 'N/A',
+            city: item.city || 'N/A',
+            postalCode: item.postal_code || 'N/A',
+            timezone: item.time_zone || 'N/A',
+            localTime: new Date().toLocaleString(),
+            coordinates: {
+                lat: item.latitude || 0,
+                lng: item.longitude || 0
+            }
+        };
+    }
+
+    const processHTTPData = (data) => {
+        return [{
+            location: 'Server',
+            result: data.error ? 'Failed' : 'Success',
+            code: data.status_code || 'N/A',
+            responseTime: 'N/A',
+            ip: 'N/A',
+            ssl: data.final_url && data.final_url.startsWith('https://'),
+            headers: data.headers || {},
+            server: data.headers?.server || 'N/A'
+        }];
+    }
+
+    const processPingData = (data) => {
+        return [{
+            location: 'Server',
+            packetsSent: data.total || 0,
+            packetsReceived: data.live || 0,
+            packetLoss: data.total ? `${Math.round(((data.total - (data.live || 0)) / data.total) * 100)}%` : '0%',
+            minTime: data.min_delay ? `${data.min_delay.toFixed(2)}ms` : 'N/A',
+            avgTime: data.average_delay ? `${data.average_delay.toFixed(2)}ms` : 'N/A',
+            maxTime: data.max_delay ? `${data.max_delay.toFixed(2)}ms` : 'N/A',
+            ip: 'N/A'
+        }];
+    }
+
+    const processTracerouteData = (data) => {
+        return {
+            target: data.target || 'N/A',
+            hops: data.hops || [],
+            error: data.error || null
+        };
+    }
+
+    const processTCPData = (data) => {
+        return [{
+            location: 'Server',
+            port: data.port || 'N/A',
+            protocol: data.protocol || 'tcp',
+            reachable: data.reachable || false,
+            latency: data.latency_ms ? `${data.latency_ms.toFixed(2)}ms` : 'N/A',
+            ip: data.ip || 'N/A'
+        }];
+    }
+
+    const processDNSData = (data) => {
+        return {
+            a_records: data.a_records || [],
+            aaaa_records: data.aaaa_records || [],
+            mx_records: data.mx_records || [],
+            ns_records: data.ns_records || [],
+            cname_records: data.cname_records || [],
+            txt_records: data.txt_records || []
+        };
     }
 
     const handleTargetKeyPress = (e) => {

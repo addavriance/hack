@@ -36,7 +36,7 @@ const TracerouteTab = ({ data, loading, error, onRetry }) => {
         )
     }
 
-    if (!data || data.length === 0) {
+    if (!data || (!data.hops || data.hops.length === 0)) {
         return (
             <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No traceroute data available</p>
@@ -54,99 +54,97 @@ const TracerouteTab = ({ data, loading, error, onRetry }) => {
             </CardHeader>
             <CardContent>
                 <div className="space-y-6">
-                    {data.map((route, routeIndex) => (
-                        <div key={routeIndex} className="border rounded-lg p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-semibold text-lg">{route.location}</h3>
-                                <div className="text-sm text-muted-foreground">
-                                    Target: <span className="font-mono">{route.target}</span>
-                                </div>
+                    <div className="border rounded-lg p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-semibold text-lg">Traceroute</h3>
+                            <div className="text-sm text-muted-foreground">
+                                Target: <span className="font-mono">{data.target}</span>
                             </div>
+                        </div>
 
-                            <div className="space-y-3">
-                                {route.hops.map((hop, hopIndex) => (
-                                    <div
-                                        key={hopIndex}
-                                        className="flex items-center space-x-4 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                                    >
-                                        {/* Hop Number */}
-                                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                            <span className="text-sm font-medium text-primary">{hopIndex + 1}</span>
+                        <div className="space-y-3">
+                            {data.hops.map((hop, hopIndex) => (
+                                <div
+                                    key={hopIndex}
+                                    className="flex items-center space-x-4 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                                >
+                                    {/* Hop Number */}
+                                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                        <span className="text-sm font-medium text-primary">{hopIndex + 1}</span>
+                                    </div>
+
+                                    {/* Status Icon */}
+                                    <div className="flex-shrink-0">
+                                        {getHopStatusIcon(hop)}
+                                    </div>
+
+                                    {/* Hop Details */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center space-x-2 mb-1">
+                                            <span className="font-mono text-sm truncate">{hop.ip || 'N/A'}</span>
+                                            {hop.hostname && hop.hostname !== hop.ip && (
+                                                <span className="text-xs text-muted-foreground truncate">
+                                                    ({hop.hostname})
+                                                </span>
+                                            )}
                                         </div>
-
-                                        {/* Status Icon */}
-                                        <div className="flex-shrink-0">
-                                            {getHopStatusIcon(hop)}
-                                        </div>
-
-                                        {/* Hop Details */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center space-x-2 mb-1">
-                                                <span className="font-mono text-sm truncate">{hop.ip}</span>
-                                                {hop.hostname && hop.hostname !== hop.ip && (
-                                                    <span className="text-xs text-muted-foreground truncate">
-                            ({hop.hostname})
-                          </span>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                                                {hop.country && (
-                                                    <span className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{hop.country}</span>
-                          </span>
-                                                )}
-                                                {hop.asn && (
-                                                    <span>AS{hop.asn}</span>
-                                                )}
-                                                {hop.isp && (
-                                                    <span className="truncate">{hop.isp}</span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Response Time */}
-                                        <div className={`text-right ${getHopStatusColor(hop)}`}>
-                                            <div className="text-sm font-medium">
-                                                {hop.time === 'timeout' ? 'Timeout' : hop.time === 'N/A' ? 'N/A' : hop.time}
-                                            </div>
-                                            {hop.packetLoss && (
-                                                <div className="text-xs text-muted-foreground">
-                                                    {hop.packetLoss} loss
-                                                </div>
+                                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                                            {hop.country && (
+                                                <span className="flex items-center space-x-1">
+                                                    <MapPin className="h-3 w-3" />
+                                                    <span>{hop.country}</span>
+                                                </span>
+                                            )}
+                                            {hop.asn && (
+                                                <span>AS{hop.asn}</span>
+                                            )}
+                                            {hop.isp && (
+                                                <span className="truncate">{hop.isp}</span>
                                             )}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
 
-                            {/* Route Summary */}
-                            <div className="mt-4 pt-4 border-t border-muted">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                    <div>
-                                        <span className="text-muted-foreground">Total Hops:</span>
-                                        <span className="ml-2 font-medium">{route.hops.length}</span>
+                                    {/* Response Time */}
+                                    <div className={`text-right ${getHopStatusColor(hop)}`}>
+                                        <div className="text-sm font-medium">
+                                            {hop.time === 'timeout' ? 'Timeout' : hop.time === 'N/A' ? 'N/A' : hop.time}
+                                        </div>
+                                        {hop.packetLoss && (
+                                            <div className="text-xs text-muted-foreground">
+                                                {hop.packetLoss} loss
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <span className="text-muted-foreground">Successful:</span>
-                                        <span className="ml-2 font-medium text-green-600">
-                      {route.hops.filter(h => h.time !== 'timeout' && h.time !== 'N/A').length}
-                    </span>
-                                    </div>
-                                    <div>
-                                        <span className="text-muted-foreground">Timeouts:</span>
-                                        <span className="ml-2 font-medium text-red-600">
-                      {route.hops.filter(h => h.time === 'timeout').length}
-                    </span>
-                                    </div>
-                                    <div>
-                                        <span className="text-muted-foreground">Total Time:</span>
-                                        <span className="ml-2 font-medium">{route.totalTime}</span>
-                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Route Summary */}
+                        <div className="mt-4 pt-4 border-t border-muted">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                    <span className="text-muted-foreground">Total Hops:</span>
+                                    <span className="ml-2 font-medium">{data.hops.length}</span>
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground">Successful:</span>
+                                    <span className="ml-2 font-medium text-green-600">
+                                        {data.hops.filter(h => h.time !== 'timeout' && h.time !== 'N/A').length}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground">Timeouts:</span>
+                                    <span className="ml-2 font-medium text-red-600">
+                                        {data.hops.filter(h => h.time === 'timeout').length}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-muted-foreground">Total Time:</span>
+                                    <span className="ml-2 font-medium">N/A</span>
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    </div>
                 </div>
             </CardContent>
         </Card>

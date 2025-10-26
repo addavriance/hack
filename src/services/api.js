@@ -146,22 +146,111 @@ class ApiService {
         });
     }
 
-    async createIPURLCheck(url = null, type = "") {
+    // Создание проверки DNS
+    async createDNSCheck(url) {
         const payload = {
-            type: type,
+            type: "dns",
             url: url
         };
-
         return this.createCheck(payload);
     }
 
-    async createDomainCheck(domain = null, type = "") {
+    // Создание HTTP проверки
+    async createHTTPCheck(url, options = {}) {
         const payload = {
-            type: type,
-            domain: domain,
+            type: "http",
+            url: url,
+            timeout: options.timeout || 10,
+            verify_ssl: options.verify_ssl !== false,
+            follow_redirects: options.follow_redirects !== false,
+            method: options.method || "GET",
+            headers: options.headers || null,
+            body: options.body || null
         };
-
         return this.createCheck(payload);
+    }
+
+    // Создание Ping проверки
+    async createPingCheck(url, count = 4) {
+        const payload = {
+            type: "ping",
+            url: url,
+            count: count
+        };
+        return this.createCheck(payload);
+    }
+
+    // Создание TCP/UDP проверки
+    async createTCPUDPCheck(ip, port, protocol = "tcp", options = {}) {
+        const payload = {
+            type: "tcp_and_udp",
+            ip: ip,
+            port: port,
+            protocol: protocol,
+            timeout: options.timeout || 5,
+            verify_ssl: options.verify_ssl !== false
+        };
+        return this.createCheck(payload);
+    }
+
+    // Создание Traceroute проверки
+    async createTracerouteCheck(url, options = {}) {
+        const payload = {
+            type: "traceroute",
+            url: url,
+            max_ttl: options.max_ttl || 30,
+            timeout: options.timeout || 2,
+            db_path: options.db_path || "/usr/src/app/GeoLite2-City.mmdb"
+        };
+        return this.createCheck(payload);
+    }
+
+    // Создание GeoIP проверки
+    async createGeoIPCheck(url, options = {}) {
+        const payload = {
+            type: "geoip",
+            url: url,
+            db_asn_path: options.db_asn_path || "/usr/src/app/GeoLite2-ASN.mmdb",
+            db_path: options.db_path || "/usr/src/app/GeoLite2-City.mmdb"
+        };
+        return this.createCheck(payload);
+    }
+
+    // Создание Nmap проверки
+    async createNmapCheck(url, ports = null) {
+        const payload = {
+            type: "nmap",
+            url: url,
+            ports: ports
+        };
+        return this.createCheck(payload);
+    }
+
+    // Создание комплексной проверки (все типы)
+    async createComprehensiveCheck(target, port = null) {
+        const checks = [];
+        
+        // DNS проверка
+        checks.push(this.createDNSCheck(target));
+        
+        // HTTP проверка
+        checks.push(this.createHTTPCheck(target));
+        
+        // Ping проверка
+        checks.push(this.createPingCheck(target));
+        
+        // GeoIP проверка
+        checks.push(this.createGeoIPCheck(target));
+        
+        // Traceroute проверка
+        checks.push(this.createTracerouteCheck(target));
+        
+        // TCP проверка (если указан порт)
+        if (port) {
+            checks.push(this.createTCPUDPCheck(target, parseInt(port), "tcp"));
+        }
+        
+        return Promise.all(checks);
     }
 
     async getCheck(checkUid) {
