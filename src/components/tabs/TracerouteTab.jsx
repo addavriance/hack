@@ -90,10 +90,10 @@ const TracerouteTab = ({data, loading, error, onRetry}) => {
 									)}
 								</div>
 								<div className="flex items-center space-x-4 text-xs text-muted-foreground">
-									{hop.country && (
+									{hop.city && (
 										<span className="flex items-center space-x-1">
                                                     <MapPin className="h-3 w-3"/>
-                                                    <span>{hop.country}</span>
+                                                    <span>{hop.city}</span>
                                                 </span>
 									)}
 									{hop.asn && (
@@ -139,10 +139,10 @@ const TracerouteTab = ({data, loading, error, onRetry}) => {
                                         {data.hops.filter(h => h.time === 'timeout').length}
                                     </span>
 						</div>
-						<div>
-							<span className="text-muted-foreground">Total Time:</span>
-							<span className="ml-2 font-medium">N/A</span>
-						</div>
+						{/*<div>*/}
+						{/*	<span className="text-muted-foreground">Total Time:</span>*/}
+						{/*	<span className="ml-2 font-medium">N/A</span>*/}
+						{/*</div>*/}
 					</div>
 				</div>
 			</div>

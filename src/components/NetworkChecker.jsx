@@ -422,7 +422,7 @@ const NetworkChecker = () => {
         }
         
         return {
-            target: result?.target || 'N/A',
+            target: result?.destination || 'N/A',
             hops: result?.hops || [],
             error: result?.error || null,
             is_failed: firstTask.is_failed
