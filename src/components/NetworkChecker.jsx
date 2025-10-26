@@ -540,8 +540,8 @@ const NetworkChecker = () => {
                 <h1 className="text-3xl font-bold mb-6">Network Diagnostics</h1>
                 
                 <div className="space-y-4 mb-6">
-                    <div className="flex flex-col gap-4">
-                        <div className="space-y-2">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 space-y-2">
                             <Input
                                 placeholder="example.com, https://example.com or 192.168.1.1"
                                 value={target}
@@ -552,9 +552,6 @@ const NetworkChecker = () => {
                             {targetError && (
                                 <p className="text-sm text-destructive">{targetError}</p>
                             )}
-                        </div>
-
-                        <div className="space-y-2">
                             <Input
                                 ref={portInputRef}
                                 placeholder="Port(optional): 8080, 44300, ..."
@@ -563,23 +560,23 @@ const NetworkChecker = () => {
                                 onKeyPress={handlePortKeyPress}
                             />
                         </div>
-                    </div>
 
-                    <Button
-                        onClick={handleCheck}
-                        disabled={isLoading || !target.trim()}
-                        className="w-full sm:w-auto"
-                    >
-                        {isLoading ? (
-                            <>
-                                <div
-                                    className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                Checking...
-                            </>
-                        ) : (
-                            'Run Diagnostics'
-                        )}
-                    </Button>
+                        <Button
+                            onClick={handleCheck}
+                            disabled={isLoading || !target.trim()}
+                            className="w-full sm:w-auto sm:h-[calc(2*2.5rem+0.5rem)] sm:px-6"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <div
+                                        className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Checking...
+                                </>
+                            ) : (
+                                'Run Diagnostics'
+                            )}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Результаты или плейсхолдер */}
