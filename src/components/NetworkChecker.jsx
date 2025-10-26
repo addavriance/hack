@@ -218,6 +218,15 @@ const NetworkChecker = () => {
                             checkUids: { ...prev.checkUids, dns: checkUid }
                         }));
                         break;
+                    case "nmap":
+                        const nmapCheck = await apiService.createNmapCheck(results.target, results.port)
+                        checkUid = nmapCheck.uid;
+                        checkType = "nmap";
+                        setResults(prev => ({
+                            ...prev,
+                            checkUids: { ...prev.checkUids, nmap: checkUid }
+                        }));
+                        break;
                     default:
                         return null;
                 }
@@ -242,6 +251,9 @@ const NetworkChecker = () => {
                         break;
                     case "dns":
                         checkType = "dns";
+                        break;
+                    case "nmap":
+                        checkType = "nmap";
                         break;
                     default:
                         return null;
@@ -298,6 +310,8 @@ const NetworkChecker = () => {
                 return processUDPData(tasks);
             case "dns":
                 return processDNSData(tasks);
+            case "nmap":
+                return processNmapData(tasks);
             default:
                 return tasks;
         }
@@ -462,6 +476,14 @@ const NetworkChecker = () => {
             cname_records: result?.cname_records || [],
             txt_records: result?.txt_records || []
         };
+    }
+
+    const processNmapData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+
+        const taskWithResult = tasks.find(task => task.result !== null);
+
+        return taskWithResult ? taskWithResult.result : null;
     }
 
     const handleTargetKeyPress = (e) => {
