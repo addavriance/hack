@@ -26,10 +26,21 @@ const UdpTab = ({ data, loading, error, onRetry, port }) => {
     if (!data || data.length === 0) {
         return (
             <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No UDP port data available</p>
-                <Button onClick={onRetry}>
-                    Check UDP Port {port || '(default)'}
-                </Button>
+                <p className="text-muted-foreground mb-4">
+                    {!port || port === 'N/A' 
+                        ? 'Please specify a port to run UDP diagnostics' 
+                        : 'No UDP port data available'
+                    }
+                </p>
+                {(!port || port === 'N/A') ? (
+                    <p className="text-sm text-muted-foreground">
+                        Enter a port number in the main form to enable UDP port checking
+                    </p>
+                ) : (
+                    <Button onClick={onRetry}>
+                        Check UDP Port {port}
+                    </Button>
+                )}
             </div>
         )
     }
@@ -59,16 +70,14 @@ const UdpTab = ({ data, loading, error, onRetry, port }) => {
                                 <td className="py-3 font-mono">{result.port}</td>
                                 <td className="py-3">
                                     <span className={`px-2 py-1 rounded text-xs ${
-                                        result.status === 'Open' 
+                                        result.reachable 
                                             ? 'bg-green-100 text-green-800' 
-                                            : result.status === 'Filtered' 
-                                                ? 'bg-yellow-100 text-yellow-800' 
-                                                : 'bg-red-100 text-red-800'
+                                            : 'bg-red-100 text-red-800'
                                     }`}>
-                                        {result.status}
+                                        {result.reachable ? 'Open' : 'Closed'}
                                     </span>
                                 </td>
-                                <td className="py-3">{result.responseTime}</td>
+                                <td className="py-3">{result.latency}</td>
                                 <td className="py-3">{result.protocol}</td>
                                 <td className="py-3 font-mono">{result.ip}</td>
                             </tr>

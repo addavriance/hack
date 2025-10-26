@@ -172,10 +172,28 @@ const NetworkChecker = () => {
                     break;
                 case "tcp":
                     // Для TCP используем tcp_and_udp данные
-                    checkUid = results.checkUids.find((uid, index) => {
-                        // Предполагаем, что TCP это 6-й элемент (индекс 5)
-                        return index === 5;
-                    });
+                    // TCP проверка создается только если указан порт
+                    if (results.port && results.port !== 'N/A') {
+                        // TCP проверка - предпоследний элемент (индекс length-2)
+                        checkUid = results.checkUids[results.checkUids.length - 2];
+                    } else {
+                        // Если порт не указан, TCP проверка не создается
+                        console.log('No port specified, TCP check not available');
+                        return null;
+                    }
+                    checkType = "tcp_and_udp";
+                    break;
+                case "udp":
+                    // Для UDP используем tcp_and_udp данные с протоколом UDP
+                    // UDP проверка создается только если указан порт
+                    if (results.port && results.port !== 'N/A') {
+                        // UDP проверка - последний элемент (индекс length-1)
+                        checkUid = results.checkUids[results.checkUids.length - 1];
+                    } else {
+                        // Если порт не указан, UDP проверка не создается
+                        console.log('No port specified, UDP check not available');
+                        return null;
+                    }
                     checkType = "tcp_and_udp";
                     break;
                 case "dns":
@@ -236,6 +254,8 @@ const NetworkChecker = () => {
                 return processTracerouteData(tasks);
             case "tcp":
                 return processTCPData(tasks);
+            case "udp":
+                return processUDPData(tasks);
             case "dns":
                 return processDNSData(tasks);
             default:
@@ -357,6 +377,24 @@ const NetworkChecker = () => {
                 location: agentName,
                 port: result?.port || 'N/A',
                 protocol: result?.protocol || 'tcp',
+                reachable: result?.reachable || false,
+                latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
+                ip: result?.ip || 'N/A'
+            };
+        });
+    }
+
+    const processUDPData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            return {
+                location: agentName,
+                port: result?.port || 'N/A',
+                protocol: result?.protocol || 'udp',
                 reachable: result?.reachable || false,
                 latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
                 ip: result?.ip || 'N/A'

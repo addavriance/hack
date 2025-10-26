@@ -181,10 +181,10 @@ class ApiService {
     }
 
     // Создание TCP/UDP проверки
-    async createTCPUDPCheck(ip, port, protocol = "tcp", options = {}) {
+    async createTCPUDPCheck(url, port, protocol = "tcp", options = {}) {
         const payload = {
             type: "tcp_and_udp",
-            ip: ip,
+            url: url,
             port: port,
             protocol: protocol,
             timeout: options.timeout || 5,
@@ -248,6 +248,11 @@ class ApiService {
         // TCP проверка (если указан порт)
         if (port) {
             checks.push(this.createTCPUDPCheck(target, parseInt(port), "tcp"));
+        }
+        
+        // UDP проверка (если указан порт)
+        if (port) {
+            checks.push(this.createTCPUDPCheck(target, parseInt(port), "udp"));
         }
         
         return Promise.all(checks);
