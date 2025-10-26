@@ -60,7 +60,6 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
                 <div className="flex flex-col gap-8 lg:flex-row lg:gap-6">
                     {/* Basic Information Section */}
                     <div className="flex-1 space-y-2">
-                        <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
                         <InfoRow label="Target" value={target} />
                         <InfoRow label="IP Address" value={agentData.ip} />
                         <InfoRow label="Host Name" value={agentData.hostname} />
@@ -73,16 +72,11 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
                         <InfoRow label="Postal Code" value={agentData.postalCode} />
                         <InfoRow label="Timezone" value={agentData.timezone} />
                         <InfoRow label="Local Time" value={agentData.localTime} />
+                        <InfoRow label="Coordinates" value={`${agentData.coordinates.lat.toFixed(4)}, ${agentData.coordinates.lng.toFixed(4)}`} />
                     </div>
 
                     {/* Location Map Section */}
                     <div className="flex-1 flex flex-col">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">Location Map</h3>
-                            <div className="text-sm text-muted-foreground">
-                                {agentData.coordinates.lat.toFixed(4)}, {agentData.coordinates.lng.toFixed(4)}
-                            </div>
-                        </div>
                         <div className="flex-1">
                             <MapView
                                 coordinates={agentData.coordinates}
