@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from './ui/card'
+import { Button } from './ui/button'
+import { RefreshCw } from 'lucide-react'
 import InfoTab from './tabs/InfoTab'
 import HttpTab from './tabs/HttpTab'
 import PingTab from './tabs/PingTab'
@@ -81,6 +83,23 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         handleTabChange(tabId)
     }
 
+    const handleRefresh = async (tabId) => {
+        setLoadingTabs(prev => ({ ...prev, [tabId]: true }))
+        setTabErrors(prev => ({ ...prev, [tabId]: null }))
+
+        try {
+            const data = await onFetchTabData(tabId)
+            setTabData(prev => ({ ...prev, [tabId]: data }))
+        } catch (error) {
+            setTabErrors(prev => ({
+                ...prev,
+                [tabId]: error.message || 'Failed to fetch data'
+            }))
+        } finally {
+            setLoadingTabs(prev => ({ ...prev, [tabId]: false }))
+        }
+    }
+
     const activeTabData = tabs.find(tab => tab.id === activeTab)
 
     return (
@@ -89,37 +108,74 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                 {/* Tab Headers */}
                 <div className="flex border-b overflow-x-auto">
                     {tabs.map(tab => (
-                        <button
+                        <div
                             key={tab.id}
-                            onClick={() => handleTabChange(tab.id)}
-                            className={`flex items-center px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                            className={`flex items-center border-b-2 transition-colors ${
                                 activeTab === tab.id
                                     ? 'border-primary text-primary'
                                     : 'border-transparent text-muted-foreground hover:text-foreground'
                             }`}
                         >
-                            {tab.label}
-                            {loadingTabs[tab.id] && (
-                                <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                            <button
+                                onClick={() => handleTabChange(tab.id)}
+                                className="flex items-center px-6 py-3 text-sm font-medium whitespace-nowrap"
+                            >
+                                {tab.label}
+                                {loadingTabs[tab.id] && (
+                                    <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                                )}
+                                {tabErrors[tab.id] && (
+                                    <span className="ml-2 w-2 h-2 bg-red-500 rounded-full" />
+                                )}
+                            </button>
+                            
+                            {/* Refresh button - only show if tab has data or is active */}
+                            {(tabData[tab.id] !== null || activeTab === tab.id) && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleRefresh(tab.id)
+                                    }}
+                                    disabled={loadingTabs[tab.id]}
+                                    className="p-1 h-6 w-6 mr-2 hover:bg-muted"
+                                >
+                                    <RefreshCw className={`h-3 w-3 ${loadingTabs[tab.id] ? 'animate-spin' : ''}`} />
+                                </Button>
                             )}
-                            {tabErrors[tab.id] && (
-                                <span className="ml-2 w-2 h-2 bg-red-500 rounded-full" />
-                            )}
-                        </button>
+                        </div>
                     ))}
                 </div>
 
                 {/* Tab Content */}
                 <div className="p-6">
                     {activeTabData && (
-                        <activeTabData.component
-                            data={tabData[activeTabData.id]}
-                            loading={loadingTabs[activeTabData.id]}
-                            error={tabErrors[activeTabData.id]}
-                            onRetry={() => handleRetry(activeTabData.id)}
-                            target={results.target}
-                            port={results.port}
-                        />
+                        <div className="space-y-4">
+                            {/* Tab Header with Refresh Button */}
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-semibold">{activeTabData.label}</h3>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleRefresh(activeTabData.id)}
+                                    disabled={loadingTabs[activeTabData.id]}
+                                    className="flex items-center space-x-2"
+                                >
+                                    <RefreshCw className={`h-4 w-4 ${loadingTabs[activeTabData.id] ? 'animate-spin' : ''}`} />
+                                    <span>Refresh</span>
+                                </Button>
+                            </div>
+                            
+                            <activeTabData.component
+                                data={tabData[activeTabData.id]}
+                                loading={loadingTabs[activeTabData.id]}
+                                error={tabErrors[activeTabData.id]}
+                                onRetry={() => handleRetry(activeTabData.id)}
+                                target={results.target}
+                                port={results.port}
+                            />
+                        </div>
                     )}
                 </div>
             </CardContent>

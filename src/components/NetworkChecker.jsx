@@ -3,7 +3,7 @@ import {Card, CardContent, CardHeader, CardTitle} from './ui/card'
 import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
-import {Scan, ArrowDown} from 'lucide-react'
+import {Scan, ArrowDown, RefreshCw} from 'lucide-react'
 import {apiService} from "../services/api.js";
 
 const NetworkChecker = () => {
@@ -366,6 +366,36 @@ const NetworkChecker = () => {
         }
     }
 
+    const handleRefreshAll = async () => {
+        if (!results || !results.checkUids) {
+            console.log('No results to refresh');
+            return;
+        }
+
+        setIsLoading(true);
+        setTargetError('');
+
+        try {
+            // Создаем новые проверки
+            const checkResults = await apiService.createComprehensiveCheck(target, port);
+            
+            console.log('Refreshed check results:', checkResults);
+
+            // Обновляем результаты с новыми UID проверок
+            setResults(prev => ({
+                ...prev,
+                checkUids: checkResults.map(result => result.uid),
+                timestamp: new Date().toISOString(),
+            }));
+
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error refreshing checks:', error);
+            setTargetError('Failed to refresh checks. Please try again.');
+            setIsLoading(false);
+        }
+    }
+
     const EmptyResultsPlaceholder = () => (
         <Card className="mt-4 mb-10 max-w-[70rem] mx-auto">
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
@@ -462,6 +492,28 @@ const NetworkChecker = () => {
                 {/* Результаты или плейсхолдер */}
                 {results ? (
                     <div className="p-4">
+                        {/* Results Header with Refresh Button */}
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 className="text-xl font-semibold">Diagnostic Results</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Last updated: {new Date(results.timestamp).toLocaleString()}
+                                </p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                onClick={handleRefreshAll}
+                                disabled={isLoading}
+                                className="flex items-center space-x-2"
+                            >
+                                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                                <span>Refresh All</span>
+                            </Button>
+                        </div>
+                        
                         <ResultsTabs
                             key={resultsKey}
                             results={results}
