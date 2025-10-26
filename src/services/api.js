@@ -34,6 +34,10 @@ class ApiService {
         localStorage.removeItem('uid');
     }
 
+    isAuthenticated() {
+        return !!this.token && !!this.uid;
+    }
+
     async request(endpoint, options = {}) {
         const url = `${API_BASE_URL}${endpoint}`;
 
@@ -229,32 +233,37 @@ class ApiService {
     // Создание комплексной проверки (все типы)
     async createComprehensiveCheck(target, port = null) {
         const checks = [];
-        
+
         // DNS проверка
         checks.push(this.createDNSCheck(target));
-        
+
         // HTTP проверка
         checks.push(this.createHTTPCheck(target));
-        
+
         // Ping проверка
         checks.push(this.createPingCheck(target));
-        
+
         // GeoIP проверка
         checks.push(this.createGeoIPCheck(target));
-        
+
         // Traceroute проверка
         checks.push(this.createTracerouteCheck(target));
-        
+
         // TCP проверка (если указан порт)
         if (port) {
             checks.push(this.createTCPUDPCheck(target, parseInt(port), "tcp"));
         }
-        
+
         // UDP проверка (если указан порт)
         if (port) {
             checks.push(this.createTCPUDPCheck(target, parseInt(port), "udp"));
         }
-        
+
+        // Nmap проверка (если авторизован)
+        if (this.isAuthenticated()) {
+            checks.push(this.createNmapCheck(target, port ? parseInt(port) : null));
+        }
+
         return Promise.all(checks);
     }
 

@@ -7,8 +7,10 @@ import PingTab from './tabs/PingTab'
 import TcpTab from './tabs/TcpTab'
 import UdpTab from './tabs/UdpTab'
 import DnsTab from './tabs/DnsTab'
-import TracerouteTab from "./tabs/TracerouteTab.jsx";
-import { debounce } from '../lib/debounce.js';
+import TracerouteTab from "./tabs/TracerouteTab.jsx"
+import NmapTab from "./tabs/NmapTab.jsx"
+import { debounce } from '../lib/debounce.js'
+import {useAuthContext} from "../contexts/AuthContext.jsx";
 
 const ResultsTabs = ({ results, onFetchTabData }) => {
     const [activeTab, setActiveTab] = useState('info')
@@ -21,11 +23,13 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         tcp: results.tcp,
         udp: results.udp,
         dns: results.dns,
-        traceroute: results.traceroute
+        traceroute: results.traceroute,
+        nmap: results.nmap
     })
     const [retryCounts, setRetryCounts] = useState({})
+    const { isAuthenticated } = useAuthContext()
 
-    // сброс при новом запросе
+    // Сброс при новом запросе
     useEffect(() => {
         setTabData({
             info: results.info,
@@ -34,13 +38,14 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
             tcp: results.tcp,
             udp: results.udp,
             dns: results.dns,
-            traceroute: results.traceroute
+            traceroute: results.traceroute,
+            nmap: results.nmap
         })
         setLoadingTabs({})
         setTabErrors({})
         setRetryCounts({}) // Сбрасываем счетчики попыток
         // Убираем автоматическое переключение на первую вкладку
-        
+
         // Автоматически загружаем данные для активной вкладки при первом отображении
         if (results && results.checkUids && results.checkUids.geoip) {
             handleTabChange(activeTab)
@@ -54,7 +59,8 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         { id: 'traceroute', label: 'Traceroute', component: TracerouteTab },
         { id: 'tcp', label: 'TCP', component: TcpTab },
         { id: 'udp', label: 'UDP', component: UdpTab },
-        { id: 'dns', label: 'DNS', component: DnsTab }
+        { id: 'dns', label: 'DNS', component: DnsTab },
+        ...(isAuthenticated ? [{ id: 'nmap', label: 'Nmap', component: NmapTab }] : [])
     ]
 
     const handleTabChange = async (tabId) => {
@@ -83,16 +89,16 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
     useEffect(() => {
         const currentTabData = tabData[activeTab]
         const currentRetryCount = retryCounts[activeTab] || 0
-        
+
         // Если нет данных, нет ошибки, не загружается и не превышен лимит попыток (10)
-        if (currentTabData === null && 
-            !tabErrors[activeTab] && 
-            !loadingTabs[activeTab] && 
+        if (currentTabData === null &&
+            !tabErrors[activeTab] &&
+            !loadingTabs[activeTab] &&
             currentRetryCount < 10) {
-            
+
             const timer = setTimeout(() => {
                 console.log(`Auto-refreshing tab ${activeTab} after 1.5s (attempt ${currentRetryCount + 1}/10)`)
-                
+
                 // Увеличиваем счетчик попыток для текущей вкладки
                 setRetryCounts(prev => ({ ...prev, [activeTab]: currentRetryCount + 1 }))
                 
@@ -119,7 +125,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         try {
             const data = await onFetchTabData(tabId)
             setTabData(prev => ({ ...prev, [tabId]: data }))
-            
+
             // Сбрасываем счетчик попыток при успешной загрузке
             if (data !== null) {
                 setRetryCounts(prev => ({ ...prev, [tabId]: 0 }))

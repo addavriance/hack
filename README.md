@@ -64,7 +64,7 @@ npm run lint
 npm run deploy
 ```
 
-Проект автоматически публикуется на: **https://checkhost.linkoo.dev**
+Проект доступен на: **https://checkhost.lvalue.dev**
 
 ## Структура проекта
 
