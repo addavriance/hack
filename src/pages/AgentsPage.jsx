@@ -109,7 +109,8 @@ const AgentsPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 min-h-[60vh]">
-            <div className="flex items-center justify-between mb-6">
+            {/* Desktop layout - header with buttons on the right */}
+            <div className="hidden sm:flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold">Agents Management</h1>
                 <div className="flex items-center space-x-2">
                     <Button
@@ -122,6 +123,25 @@ const AgentsPage = () => {
                     </Button>
                     <Button onClick={() => setShowCreateModal(true)}>
                         Add New Agent
+                    </Button>
+                </div>
+            </div>
+            
+            {/* Mobile layout - header first, then buttons below */}
+            <div className="sm:hidden mb-6">
+                <h1 className="text-2xl font-bold mb-4">Agents Management</h1>
+                <div className="flex items-center justify-start space-x-2">
+                    <Button
+                        variant="outline"
+                        onClick={debouncedRefresh}
+                        disabled={loading || refreshing}
+                        size="sm"
+                    >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${loading || refreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => setShowCreateModal(true)} size="sm">
+                        Add Agent
                     </Button>
                 </div>
             </div>

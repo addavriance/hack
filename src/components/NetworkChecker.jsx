@@ -568,14 +568,16 @@ const NetworkChecker = () => {
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <h2 className="text-xl font-semibold">Diagnostic Results</h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}
-                                    {results.originalTarget && results.originalTarget !== results.target && (
-                                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                            Auto-corrected from: {results.originalTarget}
-                                        </span>
-                                    )}
-                                </p>
+                                <div className="text-sm text-muted-foreground">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span>Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}</span>
+                                        {results.originalTarget && results.originalTarget !== results.target && (
+                                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                Auto-corrected from: {results.originalTarget}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     Last updated: {new Date(results.timestamp).toLocaleString()}
                                 </p>
