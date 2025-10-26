@@ -1,5 +1,5 @@
 import React, {useState, useRef, useCallback} from 'react'
-import {Card, CardContent, CardHeader, CardTitle} from './ui/card'
+import {Card} from './ui/card'
 import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
@@ -528,7 +528,7 @@ const NetworkChecker = () => {
     );
 
     const EmptyResultsPlaceholder = () => (
-        <Card className="mt-4 mb-10 max-w-[70rem] mx-auto">
+        <Card className="mt-4 mb-10">
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
                 <div className="max-w-lg mx-auto space-y-6">
                     <div className="relative">
@@ -558,70 +558,57 @@ const NetworkChecker = () => {
 
     return (
         <div className="bg-background">
-            <div className="max-w-6xl mx-auto">
-                <div className="p-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold">
-                                Network Diagnostics Tool
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <div className="flex-1 space-y-2">
-                                    <label className="text-sm font-medium">Target (URL or IP)</label>
-                                    <Input
-                                        placeholder="google.com, https://example.com, or 192.168.1.1"
-                                        value={target}
-                                        onChange={handleTargetChange}
-                                        onKeyPress={handleTargetKeyPress}
-                                        className={targetError ? 'border-destructive' : ''}
-                                    />
-                                    {targetError && (
-                                        <p className="text-sm text-destructive">{targetError}</p>
-                                    )}
-                                    <p className="text-xs text-muted-foreground">
-                                        Tip: You can enter just the domain (e.g., google.com) - we'll add https:// automatically
-                                    </p>
-                                </div>
+            <div className="container mx-auto px-4 py-8">
+                <h1 className="text-3xl font-bold mb-6">Network Diagnostics</h1>
+                
+                <div className="space-y-4 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 space-y-2">
+                            <label className="text-sm font-medium">Target (URL or IP)</label>
+                            <Input
+                                placeholder="google.com, https://example.com, or 192.168.1.1"
+                                value={target}
+                                onChange={handleTargetChange}
+                                onKeyPress={handleTargetKeyPress}
+                                className={targetError ? 'border-destructive' : ''}
+                            />
+                            {targetError && (
+                                <p className="text-sm text-destructive">{targetError}</p>
+                            )}
+                        </div>
 
-                                <div className="w-full sm:w-32 space-y-2">
-                                    <label className="text-sm font-medium">Port (optional)</label>
-                                    <Input
-                                        ref={portInputRef}
-                                        placeholder="80, 443..."
-                                        value={port}
-                                        onChange={handlePortChange}
-                                        onKeyPress={handlePortKeyPress}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Range: 1-65535
-                                    </p>
-                                </div>
-                            </div>
+                        <div className="w-full sm:w-32 space-y-2">
+                            <label className="text-sm font-medium">Port (optional)</label>
+                            <Input
+                                ref={portInputRef}
+                                placeholder="80, 443..."
+                                value={port}
+                                onChange={handlePortChange}
+                                onKeyPress={handlePortKeyPress}
+                            />
+                        </div>
+                    </div>
 
-                            <Button
-                                onClick={handleCheck}
-                                disabled={isLoading || !target.trim()}
-                                className="w-full sm:w-auto"
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <div
-                                            className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Checking...
-                                    </>
-                                ) : (
-                                    'Run Diagnostics'
-                                )}
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <Button
+                        onClick={handleCheck}
+                        disabled={isLoading || !target.trim()}
+                        className="w-full sm:w-auto"
+                    >
+                        {isLoading ? (
+                            <>
+                                <div
+                                    className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Checking...
+                            </>
+                        ) : (
+                            'Run Diagnostics'
+                        )}
+                    </Button>
                 </div>
 
                 {/* Результаты или плейсхолдер */}
                 {results ? (
-                    <div className="p-4">
+                    <div>
                         {/* Results Header with Refresh Button */}
                         <div className="flex items-center justify-between mb-4">
                             <div>
