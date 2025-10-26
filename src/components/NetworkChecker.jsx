@@ -1,11 +1,11 @@
-import React, {useState, useRef, useCallback} from 'react'
-import {Card, CardContent, CardHeader, CardTitle} from './ui/card'
+import React, {useState, useRef} from 'react'
+import {Card} from './ui/card'
 import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
 import {Scan, ArrowDown, RefreshCw} from 'lucide-react'
 import {apiService} from "../services/api.js";
-import {debounce} from "../lib/debounce.js";
+
 
 const NetworkChecker = () => {
     const [target, setTarget] = useState('')
@@ -340,7 +340,8 @@ const NetworkChecker = () => {
                     postalCode: 'N/A',
                     timezone: 'N/A',
                     localTime: new Date().toLocaleString(),
-                    coordinates: { lat: 0, lng: 0 }
+                    coordinates: { lat: 0, lng: 0 },
+                    is_failed: task.is_failed
                 };
             }
             
@@ -361,7 +362,8 @@ const NetworkChecker = () => {
                 coordinates: {
                     lat: item.latitude || 0,
                     lng: item.longitude || 0
-                }
+                },
+                is_failed: task.is_failed
             };
         });
     }
@@ -375,7 +377,7 @@ const NetworkChecker = () => {
             
             return {
                 location: agentName,
-                result: result?.error ? 'Failed' : 'Success',
+                result: task.is_failed ? 'Failed' : 'Success',
                 code: result?.status_code || 'N/A',
                 responseTime: 'N/A',
                 ip: 'N/A',
@@ -401,7 +403,8 @@ const NetworkChecker = () => {
                 minTime: result?.min_delay ? `${result.min_delay.toFixed(2)}ms` : 'N/A',
                 avgTime: result?.average_delay ? `${result.average_delay.toFixed(2)}ms` : 'N/A',
                 maxTime: result?.max_delay ? `${result.max_delay.toFixed(2)}ms` : 'N/A',
-                ip: 'N/A'
+                ip: 'N/A',
+                is_failed: task.is_failed
             };
         });
     }
@@ -421,7 +424,8 @@ const NetworkChecker = () => {
         return {
             target: result?.target || 'N/A',
             hops: result?.hops || [],
-            error: result?.error || null
+            error: result?.error || null,
+            is_failed: firstTask.is_failed
         };
     }
 
@@ -436,9 +440,10 @@ const NetworkChecker = () => {
                 location: agentName,
                 port: result?.port || 'N/A',
                 protocol: result?.protocol || 'tcp',
-                reachable: result?.reachable || false,
+                reachable: task.is_failed ? false : (result?.reachable || false),
                 latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
-                ip: result?.ip || 'N/A'
+                ip: result?.ip || 'N/A',
+                is_failed: task.is_failed
             };
         });
     }
@@ -454,9 +459,10 @@ const NetworkChecker = () => {
                 location: agentName,
                 port: result?.port || 'N/A',
                 protocol: result?.protocol || 'udp',
-                reachable: result?.reachable || false,
+                reachable: task.is_failed ? false : (result?.reachable || false),
                 latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
-                ip: result?.ip || 'N/A'
+                ip: result?.ip || 'N/A',
+                is_failed: task.is_failed
             };
         });
     }
@@ -474,7 +480,8 @@ const NetworkChecker = () => {
             mx_records: result?.mx_records || [],
             ns_records: result?.ns_records || [],
             cname_records: result?.cname_records || [],
-            txt_records: result?.txt_records || []
+            txt_records: result?.txt_records || [],
+            is_failed: firstTask.is_failed
         };
     }
 
@@ -498,52 +505,8 @@ const NetworkChecker = () => {
         }
     }
 
-    const handleRefreshAll = async () => {
-        if (!results || !results.checkUids) {
-            console.log('No results to refresh');
-            return;
-        }
-
-        setIsLoading(true);
-        setTargetError('');
-
-        try {
-            // Создаем новую GeoIP проверку (базовая проверка)
-            const geoipCheck = await apiService.createGeoIPCheck(results.target);
-            
-            console.log('Refreshed initial check result:', geoipCheck);
-
-            // Обновляем результаты с новым UID базовой проверки
-            setResults(prev => ({
-                ...prev,
-                checkUids: {
-                    geoip: geoipCheck.uid,
-                    http: null, // Сбрасываем остальные проверки
-                    ping: null,
-                    tcp: null,
-                    udp: null,
-                    dns: null,
-                    traceroute: null,
-                },
-                timestamp: new Date().toISOString(),
-            }));
-
-            setIsLoading(false);
-        } catch (error) {
-            console.error('Error refreshing initial check:', error);
-            setTargetError('Failed to refresh initial check. Please try again.');
-            setIsLoading(false);
-        }
-    }
-
-    // Debounced version of handleRefreshAll (500ms delay)
-    const debouncedRefreshAll = useCallback(
-        debounce(handleRefreshAll, 500),
-        [results, port]
-    );
-
     const EmptyResultsPlaceholder = () => (
-        <Card className="mt-4 mb-10 max-w-[70rem] mx-auto">
+        <Card className="mt-4 mb-10">
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
                 <div className="max-w-lg mx-auto space-y-6">
                     <div className="relative">
@@ -573,105 +536,61 @@ const NetworkChecker = () => {
 
     return (
         <div className="bg-background">
-            <div className="max-w-6xl mx-auto">
-                <div className="p-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold">
-                                Network Diagnostics Tool
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <div className="flex-1 space-y-2">
-                                    <label className="text-sm font-medium">Target (URL or IP)</label>
-                                    <Input
-                                        placeholder="google.com, https://example.com, or 192.168.1.1"
-                                        value={target}
-                                        onChange={handleTargetChange}
-                                        onKeyPress={handleTargetKeyPress}
-                                        className={targetError ? 'border-destructive' : ''}
-                                    />
-                                    {targetError && (
-                                        <p className="text-sm text-destructive">{targetError}</p>
-                                    )}
-                                    <p className="text-xs text-muted-foreground">
-                                        Tip: You can enter just the domain (e.g., google.com) - we'll add https:// automatically
-                                    </p>
-                                </div>
+            <div className="container mx-auto px-4 py-8">
+                <h1 className="text-3xl font-bold mb-6">Network Diagnostics</h1>
+                
+                <div className="space-y-4 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 space-y-2">
+                            <label className="text-sm font-medium">Target (URL or IP)</label>
+                            <Input
+                                placeholder="google.com, https://example.com, or 192.168.1.1"
+                                value={target}
+                                onChange={handleTargetChange}
+                                onKeyPress={handleTargetKeyPress}
+                                className={targetError ? 'border-destructive' : ''}
+                            />
+                            {targetError && (
+                                <p className="text-sm text-destructive">{targetError}</p>
+                            )}
+                        </div>
 
-                                <div className="w-full sm:w-32 space-y-2">
-                                    <label className="text-sm font-medium">Port (optional)</label>
-                                    <Input
-                                        ref={portInputRef}
-                                        placeholder="80, 443..."
-                                        value={port}
-                                        onChange={handlePortChange}
-                                        onKeyPress={handlePortKeyPress}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Range: 1-65535
-                                    </p>
-                                </div>
-                            </div>
+                        <div className="w-full sm:w-32 space-y-2">
+                            <label className="text-sm font-medium">Port (optional)</label>
+                            <Input
+                                ref={portInputRef}
+                                placeholder="80, 443..."
+                                value={port}
+                                onChange={handlePortChange}
+                                onKeyPress={handlePortKeyPress}
+                            />
+                        </div>
+                    </div>
 
-                            <Button
-                                onClick={handleCheck}
-                                disabled={isLoading || !target.trim()}
-                                className="w-full sm:w-auto"
-                            >
-                                {isLoading ? (
-                                    <>
-                                        <div
-                                            className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Checking...
-                                    </>
-                                ) : (
-                                    'Run Diagnostics'
-                                )}
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <Button
+                        onClick={handleCheck}
+                        disabled={isLoading || !target.trim()}
+                        className="w-full sm:w-auto"
+                    >
+                        {isLoading ? (
+                            <>
+                                <div
+                                    className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Checking...
+                            </>
+                        ) : (
+                            'Run Diagnostics'
+                        )}
+                    </Button>
                 </div>
 
                 {/* Результаты или плейсхолдер */}
                 {results ? (
-                    <div className="p-4">
-                        {/* Results Header with Refresh Button */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 className="text-xl font-semibold">Diagnostic Results</h2>
-                                <div className="text-sm text-muted-foreground">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span>Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}</span>
-                                        {results.originalTarget && results.originalTarget !== results.target && (
-                                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                                Auto-corrected from: {results.originalTarget}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Last updated: {new Date(results.timestamp).toLocaleString()}
-                                </p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                onClick={debouncedRefreshAll}
-                                disabled={isLoading}
-                                className="flex items-center space-x-2"
-                            >
-                                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                                <span>Refresh All</span>
-                            </Button>
-                        </div>
-                        
-                        <ResultsTabs
-                            key={resultsKey}
-                            results={results}
-                            onFetchTabData={handleFetchTabData}
-                        />
-                    </div>
+                    <ResultsTabs
+                        key={resultsKey}
+                        results={results}
+                        onFetchTabData={handleFetchTabData}
+                    />
                 ) : (
                     <EmptyResultsPlaceholder/>
                 )}

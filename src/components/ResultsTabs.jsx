@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { RefreshCw } from 'lucide-react'
 import InfoTab from './tabs/InfoTab'
@@ -102,8 +101,8 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
 
                 // Увеличиваем счетчик попыток для текущей вкладки
                 setRetryCounts(prev => ({ ...prev, [activeTab]: currentRetryCount + 1 }))
-
-                handleRefresh(activeTab)
+                
+                handleTabChange(activeTab)
             }, 1500)
 
             return () => clearTimeout(timer)
@@ -149,13 +148,13 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         [onFetchTabData]
     );
 
+
     const activeTabData = tabs.find(tab => tab.id === activeTab)
 
     return (
-        <Card>
-            <CardContent className="p-0">
-                {/* Tab Headers */}
-                <div className="flex border-b overflow-x-auto">
+        <div>
+            {/* Tab Headers */}
+            <div className="flex border-b overflow-x-auto">
                     {tabs.map(tab => (
                         <div
                             key={tab.id}
@@ -177,22 +176,6 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                     <span className="ml-2 w-2 h-2 bg-red-500 rounded-full" />
                                 )}
                             </button>
-
-                            {/* Refresh button - only show if tab has data or is active */}
-                            {(tabData[tab.id] !== null || activeTab === tab.id) && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        debouncedRefresh(tab.id)
-                                    }}
-                                    disabled={loadingTabs[tab.id]}
-                                    className="p-1 h-6 w-6 mr-2 hover:bg-muted"
-                                >
-                                    <RefreshCw className={`h-3 w-3 ${loadingTabs[tab.id] ? 'animate-spin' : ''}`} />
-                                </Button>
-                            )}
                         </div>
                     ))}
                 </div>
@@ -215,7 +198,6 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                     <span>Refresh</span>
                                 </Button>
                             </div>
-
                             <activeTabData.component
                                 data={tabData[activeTabData.id]}
                                 loading={loadingTabs[activeTabData.id]}
@@ -227,8 +209,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                         </div>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+        </div>
     )
 }
 

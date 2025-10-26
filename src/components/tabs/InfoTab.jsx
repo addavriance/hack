@@ -44,7 +44,16 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
     const AgentCard = ({ agentData, index }) => (
         <Card>
             <CardHeader>
-                <CardTitle>{agentData.agent}</CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle>{agentData.agent}</CardTitle>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                        agentData.is_failed
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-green-100 text-green-800'
+                    }`}>
+                        {agentData.is_failed ? 'Failed' : 'Success'}
+                    </span>
+                </div>
             </CardHeader>
             <CardContent className="space-y-6">
                 {/* Desktop: Horizontal layout, Mobile/Tablet: Vertical layout */}
