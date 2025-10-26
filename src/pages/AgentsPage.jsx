@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import AgentsTable from '../components/AgentsTable'
@@ -6,6 +6,7 @@ import CreateAgentModal from '../components/modals/CreateAgentModal'
 import { apiService } from '../services/api'
 import { useAuthContext } from '../contexts/AuthContext'
 import { AlertCircle, RefreshCw } from 'lucide-react'
+import { debounce } from '../lib/debounce.js'
 
 const AgentsPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false)
@@ -87,6 +88,12 @@ const AgentsPage = () => {
         loadAgents(true)
     }
 
+    // Debounced version of handleRefresh (400ms delay)
+    const debouncedRefresh = useCallback(
+        debounce(handleRefresh, 400),
+        [isAuthenticated]
+    );
+
     if (!isAuthenticated) {
         return (
             <div className="container mx-auto px-4 py-8">
@@ -107,7 +114,7 @@ const AgentsPage = () => {
                 <div className="flex items-center space-x-2">
                     <Button
                         variant="outline"
-                        onClick={handleRefresh}
+                        onClick={debouncedRefresh}
                         disabled={loading || refreshing}
                     >
                         <RefreshCw className={`h-4 w-4 mr-2 ${loading || refreshing ? 'animate-spin' : ''}`} />
@@ -136,7 +143,7 @@ const AgentsPage = () => {
                         loading={loading}
                         onUpdate={handleAgentUpdate}
                         onDelete={handleAgentDelete}
-                        onRefresh={handleRefresh}
+                        onRefresh={debouncedRefresh}
                     />
                 </CardContent>
             </Card>

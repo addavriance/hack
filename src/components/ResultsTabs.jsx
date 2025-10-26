@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { RefreshCw } from 'lucide-react'
@@ -9,6 +9,7 @@ import TcpTab from './tabs/TcpTab'
 import UdpTab from './tabs/UdpTab'
 import DnsTab from './tabs/DnsTab'
 import TracerouteTab from "./tabs/TracerouteTab.jsx";
+import { debounce } from '../lib/debounce.js';
 
 const ResultsTabs = ({ results, onFetchTabData }) => {
     const [activeTab, setActiveTab] = useState('info')
@@ -100,6 +101,14 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         }
     }
 
+    // Debounced version of handleRefresh (300ms delay)
+    const debouncedRefresh = useCallback(
+        debounce((tabId) => {
+            handleRefresh(tabId);
+        }, 300),
+        [onFetchTabData]
+    );
+
     const activeTabData = tabs.find(tab => tab.id === activeTab)
 
     return (
@@ -136,7 +145,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                     size="sm"
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        handleRefresh(tab.id)
+                                        debouncedRefresh(tab.id)
                                     }}
                                     disabled={loadingTabs[tab.id]}
                                     className="p-1 h-6 w-6 mr-2 hover:bg-muted"
@@ -158,7 +167,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleRefresh(activeTabData.id)}
+                                    onClick={() => debouncedRefresh(activeTabData.id)}
                                     disabled={loadingTabs[activeTabData.id]}
                                     className="flex items-center space-x-2"
                                 >

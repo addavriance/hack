@@ -1,10 +1,11 @@
-import React, {useState, useRef} from 'react'
+import React, {useState, useRef, useCallback} from 'react'
 import {Card, CardContent, CardHeader, CardTitle} from './ui/card'
 import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
 import {Scan, ArrowDown, RefreshCw} from 'lucide-react'
 import {apiService} from "../services/api.js";
+import {debounce} from "../lib/debounce.js";
 
 const NetworkChecker = () => {
     const [target, setTarget] = useState('')
@@ -462,6 +463,12 @@ const NetworkChecker = () => {
         }
     }
 
+    // Debounced version of handleRefreshAll (500ms delay)
+    const debouncedRefreshAll = useCallback(
+        debounce(handleRefreshAll, 500),
+        [results, port]
+    );
+
     const EmptyResultsPlaceholder = () => (
         <Card className="mt-4 mb-10 max-w-[70rem] mx-auto">
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
@@ -575,7 +582,7 @@ const NetworkChecker = () => {
                             </div>
                             <Button
                                 variant="outline"
-                                onClick={handleRefreshAll}
+                                onClick={debouncedRefreshAll}
                                 disabled={isLoading}
                                 className="flex items-center space-x-2"
                             >
