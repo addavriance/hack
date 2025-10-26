@@ -188,112 +188,169 @@ const NetworkChecker = () => {
             return null;
         }
 
-        // Находим задачу с нужным типом
-        const task = checkData.tasks.find(t => t.payload && t.payload.type === checkType);
-        if (!task || !task.result) {
-            console.log(`No task or result found for type ${checkType} in ${tabId}`);
+        // Находим все задачи с нужным типом
+        const tasks = checkData.tasks.filter(t => t.payload && t.payload.type === checkType);
+        if (!tasks || tasks.length === 0) {
+            console.log(`No tasks found for type ${checkType} in ${tabId}`);
             return null;
         }
 
-        const result = task.result;
-        console.log(`Found result for ${tabId}:`, result);
+        console.log(`Found ${tasks.length} tasks for ${tabId}:`, tasks);
 
         // Преобразуем данные в формат, ожидаемый компонентами вкладок
         switch (tabId) {
             case "info":
-                return processGeoIPData(result);
+                return processGeoIPData(tasks);
             case "http":
-                return processHTTPData(result);
+                return processHTTPData(tasks);
             case "ping":
-                return processPingData(result);
+                return processPingData(tasks);
             case "traceroute":
-                return processTracerouteData(result);
+                return processTracerouteData(tasks);
             case "tcp":
-                return processTCPData(result);
+                return processTCPData(tasks);
             case "dns":
-                return processDNSData(result);
+                return processDNSData(tasks);
             default:
-                return result;
+                return tasks;
         }
     }
 
     // Обработчики для каждого типа данных
-    const processGeoIPData = (data) => {
-        if (!data.items || data.items.length === 0) return null;
+    const processGeoIPData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
         
-        const item = data.items[0];
-        return {
-            ip: item.ip || 'N/A',
-            hostname: item.hostname || 'N/A',
-            ipRange: item.ipRange || 'N/A',
-            asn: item.asn || 'N/A',
-            isp: item.organization || 'N/A',
-            country: item.country || 'N/A',
-            region: item.region || 'N/A',
-            city: item.city || 'N/A',
-            postalCode: item.postal_code || 'N/A',
-            timezone: item.time_zone || 'N/A',
-            localTime: new Date().toLocaleString(),
-            coordinates: {
-                lat: item.latitude || 0,
-                lng: item.longitude || 0
+        // Обрабатываем данные от всех агентов
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            if (!result || !result.items || result.items.length === 0) {
+                return {
+                    agent: agentName,
+                    ip: 'N/A',
+                    hostname: 'N/A',
+                    ipRange: 'N/A',
+                    asn: 'N/A',
+                    isp: 'N/A',
+                    country: 'N/A',
+                    region: 'N/A',
+                    city: 'N/A',
+                    postalCode: 'N/A',
+                    timezone: 'N/A',
+                    localTime: new Date().toLocaleString(),
+                    coordinates: { lat: 0, lng: 0 }
+                };
             }
+            
+            const item = result.items[0]; // Берем первый элемент из items
+            return {
+                agent: agentName,
+                ip: item.ip || 'N/A',
+                hostname: item.hostname || 'N/A',
+                ipRange: item.ipRange || 'N/A',
+                asn: item.asn || 'N/A',
+                isp: item.organization || 'N/A',
+                country: item.country || 'N/A',
+                region: item.region || 'N/A',
+                city: item.city || 'N/A',
+                postalCode: item.postal_code || 'N/A',
+                timezone: item.time_zone || 'N/A',
+                localTime: new Date().toLocaleString(),
+                coordinates: {
+                    lat: item.latitude || 0,
+                    lng: item.longitude || 0
+                }
+            };
+        });
+    }
+
+    const processHTTPData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            return {
+                location: agentName,
+                result: result?.error ? 'Failed' : 'Success',
+                code: result?.status_code || 'N/A',
+                responseTime: 'N/A',
+                ip: 'N/A',
+                ssl: result?.final_url && result.final_url.startsWith('https://'),
+                headers: result?.headers || {},
+                server: result?.headers?.server || 'N/A'
+            };
+        });
+    }
+
+    const processPingData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            return {
+                location: agentName,
+                packetsSent: result?.total || 0,
+                packetsReceived: result?.live || 0,
+                packetLoss: result?.total ? `${Math.round(((result.total - (result.live || 0)) / result.total) * 100)}%` : '0%',
+                minTime: result?.min_delay ? `${result.min_delay.toFixed(2)}ms` : 'N/A',
+                avgTime: result?.average_delay ? `${result.average_delay.toFixed(2)}ms` : 'N/A',
+                maxTime: result?.max_delay ? `${result.max_delay.toFixed(2)}ms` : 'N/A',
+                ip: 'N/A'
+            };
+        });
+    }
+
+    const processTracerouteData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        // Для traceroute возвращаем данные от первого агента
+        const firstTask = tasks[0];
+        const result = firstTask?.result;
+        
+        return {
+            target: result?.target || 'N/A',
+            hops: result?.hops || [],
+            error: result?.error || null
         };
     }
 
-    const processHTTPData = (data) => {
-        return [{
-            location: 'Server',
-            result: data.error ? 'Failed' : 'Success',
-            code: data.status_code || 'N/A',
-            responseTime: 'N/A',
-            ip: 'N/A',
-            ssl: data.final_url && data.final_url.startsWith('https://'),
-            headers: data.headers || {},
-            server: data.headers?.server || 'N/A'
-        }];
+    const processTCPData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            return {
+                location: agentName,
+                port: result?.port || 'N/A',
+                protocol: result?.protocol || 'tcp',
+                reachable: result?.reachable || false,
+                latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
+                ip: result?.ip || 'N/A'
+            };
+        });
     }
 
-    const processPingData = (data) => {
-        return [{
-            location: 'Server',
-            packetsSent: data.total || 0,
-            packetsReceived: data.live || 0,
-            packetLoss: data.total ? `${Math.round(((data.total - (data.live || 0)) / data.total) * 100)}%` : '0%',
-            minTime: data.min_delay ? `${data.min_delay.toFixed(2)}ms` : 'N/A',
-            avgTime: data.average_delay ? `${data.average_delay.toFixed(2)}ms` : 'N/A',
-            maxTime: data.max_delay ? `${data.max_delay.toFixed(2)}ms` : 'N/A',
-            ip: 'N/A'
-        }];
-    }
-
-    const processTracerouteData = (data) => {
+    const processDNSData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        // Для DNS возвращаем данные от первого агента
+        const firstTask = tasks[0];
+        const result = firstTask?.result;
+        
         return {
-            target: data.target || 'N/A',
-            hops: data.hops || [],
-            error: data.error || null
-        };
-    }
-
-    const processTCPData = (data) => {
-        return [{
-            location: 'Server',
-            port: data.port || 'N/A',
-            protocol: data.protocol || 'tcp',
-            reachable: data.reachable || false,
-            latency: data.latency_ms ? `${data.latency_ms.toFixed(2)}ms` : 'N/A',
-            ip: data.ip || 'N/A'
-        }];
-    }
-
-    const processDNSData = (data) => {
-        return {
-            a_records: data.a_records || [],
-            aaaa_records: data.aaaa_records || [],
-            mx_records: data.mx_records || [],
-            ns_records: data.ns_records || [],
-            cname_records: data.cname_records || [],
-            txt_records: data.txt_records || []
+            a_records: result?.a_records || [],
+            aaaa_records: result?.aaaa_records || [],
+            mx_records: result?.mx_records || [],
+            ns_records: result?.ns_records || [],
+            cname_records: result?.cname_records || [],
+            txt_records: result?.txt_records || []
         };
     }
 
