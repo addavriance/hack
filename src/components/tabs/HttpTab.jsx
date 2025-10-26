@@ -47,9 +47,9 @@ const HttpTab = ({ data, loading, error, onRetry }) => {
         return (
             <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No HTTP(S) data available</p>
-                <Button onClick={onRetry}>
-                    Run HTTP Check
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                    Open this tab to run HTTP(S) check
+                </p>
             </div>
         )
     }

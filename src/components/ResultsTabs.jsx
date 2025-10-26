@@ -38,11 +38,11 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         })
         setLoadingTabs({})
         setTabErrors({})
-        setActiveTab('info') // возвращаем на первую вкладку
+        // Убираем автоматическое переключение на первую вкладку
         
-        // Автоматически загружаем данные для вкладки info при первом отображении
-        if (results && results.checkUids && results.checkUids.length > 0) {
-            handleTabChange('info')
+        // Автоматически загружаем данные для активной вкладки при первом отображении
+        if (results && results.checkUids && results.checkUids.geoip) {
+            handleTabChange(activeTab)
         }
     }, [results])
 
