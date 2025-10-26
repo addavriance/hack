@@ -11,13 +11,19 @@ const AgentsPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [agents, setAgents] = useState([])
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState('')
     const { isAuthenticated } = useAuthContext()
 
-    const loadAgents = async () => {
+    const loadAgents = async (isBackgroundRefresh = false) => {
         if (!isAuthenticated) return
 
-        setLoading(true)
+        if (!isBackgroundRefresh) {
+            setLoading(true)
+        } else {
+            setRefreshing(true)
+        }
+
         setError('')
         try {
             const agentsData = await apiService.getAgents()
@@ -27,11 +33,22 @@ const AgentsPage = () => {
             console.error('Error loading agents:', err)
         } finally {
             setLoading(false)
+            setRefreshing(false)
         }
     }
 
     useEffect(() => {
         loadAgents()
+    }, [isAuthenticated])
+
+    useEffect(() => {
+        if (!isAuthenticated) return
+
+        const interval = setInterval(() => {
+            loadAgents(true)
+        }, 5000)
+
+        return () => clearInterval(interval)
     }, [isAuthenticated])
 
     const handleAgentCreate = async (newAgent) => {
@@ -67,7 +84,7 @@ const AgentsPage = () => {
     }
 
     const handleRefresh = () => {
-        loadAgents()
+        loadAgents(true)
     }
 
     if (!isAuthenticated) {
@@ -84,16 +101,16 @@ const AgentsPage = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 min-h-[60vh]">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold">Agents Management</h1>
                 <div className="flex items-center space-x-2">
                     <Button
                         variant="outline"
                         onClick={handleRefresh}
-                        disabled={loading}
+                        disabled={loading || refreshing}
                     >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`h-4 w-4 mr-2 ${loading || refreshing ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                     <Button onClick={() => setShowCreateModal(true)}>
