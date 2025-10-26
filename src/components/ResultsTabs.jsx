@@ -36,6 +36,11 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         setLoadingTabs({})
         setTabErrors({})
         setActiveTab('info') // возвращаем на первую вкладку
+        
+        // Автоматически загружаем данные для вкладки info при первом отображении
+        if (results && results.checkUids && results.checkUids.length > 0) {
+            handleTabChange('info')
+        }
     }, [results])
 
     const tabs = [
@@ -51,7 +56,8 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
     const handleTabChange = async (tabId) => {
         setActiveTab(tabId)
 
-        if (tabData[tabId] !== null || tabId === 'info') return
+        // Если данные уже загружены, не делаем повторный запрос
+        if (tabData[tabId] !== null) return
 
         setLoadingTabs(prev => ({ ...prev, [tabId]: true }))
         setTabErrors(prev => ({ ...prev, [tabId]: null }))

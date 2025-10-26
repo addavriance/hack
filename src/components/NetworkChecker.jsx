@@ -96,7 +96,12 @@ const NetworkChecker = () => {
     }
 
     const handleFetchTabData = async (tabId) => {
-        if (!results || !results.checkUids) return null;
+        if (!results || !results.checkUids) {
+            console.log('No results or checkUids available');
+            return null;
+        }
+
+        console.log(`Fetching data for tab: ${tabId}`, results.checkUids);
 
         try {
             // Получаем данные для конкретной вкладки
@@ -112,6 +117,7 @@ const NetworkChecker = () => {
                         return index === 3;
                     });
                     checkType = "geoip";
+                    console.log(`Info tab - using checkUid: ${checkUid}, type: ${checkType}`);
                     break;
                 case "http":
                     // Для HTTP используем HTTP данные
@@ -175,17 +181,22 @@ const NetworkChecker = () => {
 
     // Функция для обработки данных проверки
     const processCheckData = (checkData, checkType, tabId) => {
+        console.log(`Processing check data for ${tabId}:`, checkData);
+        
         if (!checkData || !checkData.tasks || checkData.tasks.length === 0) {
+            console.log(`No tasks found in check data for ${tabId}`);
             return null;
         }
 
         // Находим задачу с нужным типом
         const task = checkData.tasks.find(t => t.payload && t.payload.type === checkType);
         if (!task || !task.result) {
+            console.log(`No task or result found for type ${checkType} in ${tabId}`);
             return null;
         }
 
         const result = task.result;
+        console.log(`Found result for ${tabId}:`, result);
 
         // Преобразуем данные в формат, ожидаемый компонентами вкладок
         switch (tabId) {
