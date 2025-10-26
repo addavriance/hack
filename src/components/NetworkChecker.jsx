@@ -540,11 +540,10 @@ const NetworkChecker = () => {
                 <h1 className="text-3xl font-bold mb-6">Network Diagnostics</h1>
                 
                 <div className="space-y-4 mb-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1 space-y-2">
-                            <label className="text-sm font-medium">Target (URL or IP)</label>
+                    <div className="flex flex-col gap-4">
+                        <div className="space-y-2">
                             <Input
-                                placeholder="google.com, https://example.com, or 192.168.1.1"
+                                placeholder="example.com, https://example.com or 192.168.1.1"
                                 value={target}
                                 onChange={handleTargetChange}
                                 onKeyPress={handleTargetKeyPress}
@@ -555,11 +554,10 @@ const NetworkChecker = () => {
                             )}
                         </div>
 
-                        <div className="w-full sm:w-32 space-y-2">
-                            <label className="text-sm font-medium">Port (optional)</label>
+                        <div className="space-y-2">
                             <Input
                                 ref={portInputRef}
-                                placeholder="80, 443..."
+                                placeholder="Port(optional): 8080, 44300, ..."
                                 value={port}
                                 onChange={handlePortChange}
                                 onKeyPress={handlePortKeyPress}
