@@ -32,6 +32,30 @@ const NetworkChecker = () => {
         return 'string';
     }
 
+    const normalizeInput = (input) => {
+        const trimmedInput = input.trim();
+        
+        // Если это IP адрес, возвращаем как есть
+        const ipPattern = /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
+        if (ipPattern.test(trimmedInput)) {
+            return trimmedInput;
+        }
+        
+        // Если это домен без протокола, добавляем https://
+        const domainPattern = /^([\w\d-]+\.)+[\w]{2,}$/i;
+        if (domainPattern.test(trimmedInput)) {
+            return `https://${trimmedInput}`;
+        }
+        
+        // Если уже есть протокол, возвращаем как есть
+        if (/^https?:\/\//i.test(trimmedInput)) {
+            return trimmedInput;
+        }
+        
+        // Для остальных случаев возвращаем как есть
+        return trimmedInput;
+    }
+
 
     const handleTargetChange = (e) => {
         const value = e.target.value
@@ -50,7 +74,9 @@ const NetworkChecker = () => {
             return
         }
 
-        const targetType = validateInput(target);
+        // Нормализуем ввод (добавляем https:// если нужно)
+        const normalizedTarget = normalizeInput(target);
+        const targetType = validateInput(normalizedTarget);
 
         if (targetType === 'string') {
             setTargetError('Please enter a valid URL or IP address')
@@ -67,14 +93,15 @@ const NetworkChecker = () => {
         setResultsKey(prev => prev + 1);
 
         try {
-            // Создаем комплексную проверку
-            const checkResults = await apiService.createComprehensiveCheck(target, port);
+            // Создаем комплексную проверку с нормализованным target
+            const checkResults = await apiService.createComprehensiveCheck(normalizedTarget, port);
             
             console.log('Check results:', checkResults);
 
             // Инициализируем результаты с базовой информацией
             setResults({
-                target,
+                target: normalizedTarget, // Используем нормализованный target
+                originalTarget: target, // Сохраняем оригинальный ввод пользователя
                 port: port || 'N/A',
                 timestamp: new Date().toISOString(),
                 checkUids: checkResults.map(result => result.uid), // Сохраняем UID проверок
@@ -376,8 +403,9 @@ const NetworkChecker = () => {
         setTargetError('');
 
         try {
-            // Создаем новые проверки
-            const checkResults = await apiService.createComprehensiveCheck(target, port);
+            // Используем нормализованный target из результатов
+            const normalizedTarget = results.target;
+            const checkResults = await apiService.createComprehensiveCheck(normalizedTarget, port);
             
             console.log('Refreshed check results:', checkResults);
 
@@ -440,7 +468,7 @@ const NetworkChecker = () => {
                                 <div className="flex-1 space-y-2">
                                     <label className="text-sm font-medium">Target (URL or IP)</label>
                                     <Input
-                                        placeholder="example.com or 192.168.1.1"
+                                        placeholder="google.com, https://example.com, or 192.168.1.1"
                                         value={target}
                                         onChange={handleTargetChange}
                                         onKeyPress={handleTargetKeyPress}
@@ -450,8 +478,7 @@ const NetworkChecker = () => {
                                         <p className="text-sm text-destructive">{targetError}</p>
                                     )}
                                     <p className="text-xs text-muted-foreground">
-                                        Tip: Type <kbd className="px-1 py-0.5 bg-muted rounded text-xs">:</kbd> to
-                                        quickly jump to port field
+                                        Tip: You can enter just the domain (e.g., google.com) - we'll add https:// automatically
                                     </p>
                                 </div>
 
@@ -498,6 +525,11 @@ const NetworkChecker = () => {
                                 <h2 className="text-xl font-semibold">Diagnostic Results</h2>
                                 <p className="text-sm text-muted-foreground">
                                     Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}
+                                    {results.originalTarget && results.originalTarget !== results.target && (
+                                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                            Auto-corrected from: {results.originalTarget}
+                                        </span>
+                                    )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     Last updated: {new Date(results.timestamp).toLocaleString()}
