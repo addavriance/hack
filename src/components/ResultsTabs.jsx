@@ -153,40 +153,50 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
 
     return (
         <div>
-            {/* Tab Headers */}
-            <div className="flex border-b overflow-x-auto">
-                    {tabs.map(tab => (
-                        <div
-                            key={tab.id}
-                            className={`flex items-center border-b-2 transition-colors ${
-                                activeTab === tab.id
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                            }`}
+            <div className="relative">
+                {/* Refresh Button - Above on mobile */}
+                {activeTabData && (
+                    <div className="flex justify-end px-4 py-2 md:hidden border-b">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => debouncedRefresh(activeTabData.id)}
+                            disabled={loadingTabs[activeTabData.id]}
+                            className="flex items-center space-x-2"
                         >
-                            <button
-                                onClick={() => handleTabChange(tab.id)}
-                                className="flex items-center px-6 py-3 text-sm font-medium whitespace-nowrap"
+                            <RefreshCw className={`h-4 w-4 ${loadingTabs[activeTabData.id] ? 'animate-spin' : ''}`} />
+                            <span>Refresh</span>
+                        </Button>
+                    </div>
+                )}
+                {/* Tab Headers */}
+                <div className="relative">
+                    <div className="flex items-center border-b overflow-x-auto scrollbar-hide">
+                        {tabs.map(tab => (
+                            <div
+                                key={tab.id}
+                                className={`flex items-center border-b-2 transition-colors ${
+                                    activeTab === tab.id
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                                }`}
                             >
-                                {tab.label}
-                                {loadingTabs[tab.id] && (
-                                    <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
-                                )}
-                                {tabErrors[tab.id] && (
-                                    <span className="ml-2 w-2 h-2 bg-red-500 rounded-full" />
-                                )}
-                            </button>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Tab Content */}
-                <div className="p-6">
-                    {activeTabData && (
-                        <div className="space-y-4">
-                            {/* Tab Header with Refresh Button */}
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">{activeTabData.label}</h3>
+                                <button
+                                    onClick={() => handleTabChange(tab.id)}
+                                    className="flex items-center px-6 py-3 text-sm font-medium whitespace-nowrap"
+                                >
+                                    {tab.label}
+                                    {loadingTabs[tab.id] && (
+                                        <span className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                                    )}
+                                    {tabErrors[tab.id] && (
+                                        <span className="ml-2 w-2 h-2 bg-red-500 rounded-full" />
+                                    )}
+                                </button>
+                            </div>
+                        ))}
+                        {activeTabData && (
+                            <div className="hidden md:flex ml-auto mr-4">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -198,17 +208,26 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                     <span>Refresh</span>
                                 </Button>
                             </div>
-                            <activeTabData.component
-                                data={tabData[activeTabData.id]}
-                                loading={loadingTabs[activeTabData.id]}
-                                error={tabErrors[activeTabData.id]}
-                                onRetry={() => handleRetry(activeTabData.id)}
-                                target={results.target}
-                                port={results.port}
-                            />
-                        </div>
-                    )}
+                        )}
+                    </div>
+                    {/* Fixed gradient overlay - positioned relative to the outer container */}
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 md:hidden"></div>
                 </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-6">
+                {activeTabData && (
+                    <activeTabData.component
+                        data={tabData[activeTabData.id]}
+                        loading={loadingTabs[activeTabData.id]}
+                        error={tabErrors[activeTabData.id]}
+                        onRetry={() => handleRetry(activeTabData.id)}
+                        target={results.target}
+                        port={results.port}
+                    />
+                )}
+            </div>
         </div>
     )
 }
