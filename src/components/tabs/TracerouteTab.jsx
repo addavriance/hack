@@ -1,5 +1,4 @@
 import React from 'react'
-import {CardContent} from '../ui/card'
 import {Button} from '../ui/button'
 import {MapPin, Clock, AlertCircle} from 'lucide-react'
 
@@ -48,8 +47,7 @@ const TracerouteTab = ({data, loading, error, onRetry}) => {
 	}
 
 	return (
-		<CardContent>
-			<div className="space-y-6">
+		<div className="space-y-6">
 				<div className="flex items-center justify-between mb-4">
 					<div className="flex items-center space-x-4">
                                 <span className={`px-2 py-1 rounded text-xs ${
@@ -148,7 +146,6 @@ const TracerouteTab = ({data, loading, error, onRetry}) => {
 					</div>
 				</div>
 			</div>
-		</CardContent>
 	)
 }
 

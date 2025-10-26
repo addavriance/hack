@@ -1,5 +1,4 @@
 import React from 'react'
-import { CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 
 const TcpTab = ({ data, loading, error, onRetry, port }) => {
@@ -46,8 +45,7 @@ const TcpTab = ({ data, loading, error, onRetry, port }) => {
     }
 
     return (
-        <CardContent>
-            <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                         <tr className="border-b">
@@ -83,7 +81,6 @@ const TcpTab = ({ data, loading, error, onRetry, port }) => {
                         </tbody>
                     </table>
                 </div>
-        </CardContent>
     )
 }
 

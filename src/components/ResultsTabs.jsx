@@ -9,7 +9,6 @@ import UdpTab from './tabs/UdpTab'
 import DnsTab from './tabs/DnsTab'
 import TracerouteTab from "./tabs/TracerouteTab.jsx";
 import { debounce } from '../lib/debounce.js';
-import {Card, CardHeader, CardTitle} from "./ui/card.jsx";
 
 const ResultsTabs = ({ results, onFetchTabData }) => {
     const [activeTab, setActiveTab] = useState('info')
@@ -178,10 +177,10 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                 {/* Tab Content */}
                 <div className="p-6">
                     {activeTabData && (
-                        <Card className="space-y-4">
+                        <div className="space-y-4">
                             {/* Tab Header with Refresh Button */}
-                            <CardHeader>
-                                <CardTitle>{activeTabData.label}</CardTitle>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-semibold">{activeTabData.label}</h3>
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -192,21 +191,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                     <RefreshCw className={`h-4 w-4 ${loadingTabs[activeTabData.id] ? 'animate-spin' : ''}`} />
                                     <span>Refresh</span>
                                 </Button>
-                            </CardHeader>
-                            {/*<div className="flex items-center justify-between">*/}
-                            {/*    <h3 className="text-lg font-semibold">{activeTabData.label}</h3>*/}
-                            {/*    <Button*/}
-                            {/*        variant="outline"*/}
-                            {/*        size="sm"*/}
-                            {/*        onClick={() => debouncedRefresh(activeTabData.id)}*/}
-                            {/*        disabled={loadingTabs[activeTabData.id]}*/}
-                            {/*        className="flex items-center space-x-2"*/}
-                            {/*    >*/}
-                            {/*        <RefreshCw className={`h-4 w-4 ${loadingTabs[activeTabData.id] ? 'animate-spin' : ''}`} />*/}
-                            {/*        <span>Refresh</span>*/}
-                            {/*    </Button>*/}
-                            {/*</div>*/}
-                            
+                            </div>
                             <activeTabData.component
                                 data={tabData[activeTabData.id]}
                                 loading={loadingTabs[activeTabData.id]}
@@ -215,7 +200,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                 target={results.target}
                                 port={results.port}
                             />
-                        </Card>
+                        </div>
                     )}
                 </div>
         </div>

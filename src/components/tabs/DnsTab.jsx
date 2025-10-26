@@ -1,5 +1,4 @@
 import React from 'react'
-import { CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 
 const DnsTab = ({ data, loading, error, onRetry }) => {
@@ -55,14 +54,14 @@ const DnsTab = ({ data, loading, error, onRetry }) => {
     )
 
     return (
-        <CardContent>
+        <>
                 <DnsRecordSection title="A Records (IPv4)" records={data.a_records} type="A" />
                 <DnsRecordSection title="AAAA Records (IPv6)" records={data.aaaa_records} type="AAAA" />
                 <DnsRecordSection title="MX Records (Mail)" records={data.mx_records} type="MX" />
                 <DnsRecordSection title="NS Records (Name Server)" records={data.ns_records} type="NS" />
                 <DnsRecordSection title="TXT Records" records={data.txt_records} type="TXT" />
                 <DnsRecordSection title="CNAME Records" records={data.cname_records} type="CNAME" />
-        </CardContent>
+        </>
     )
 }
 

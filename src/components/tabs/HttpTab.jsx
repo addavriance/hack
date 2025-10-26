@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { ChevronDown, ChevronRight, FileText } from 'lucide-react'
 
@@ -55,8 +54,7 @@ const HttpTab = ({ data, loading, error, onRetry }) => {
     }
 
     return (
-        <CardContent>
-            <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                         <tr className="border-b">
@@ -141,7 +139,6 @@ const HttpTab = ({ data, loading, error, onRetry }) => {
                         </tbody>
                     </table>
                 </div>
-        </CardContent>
     )
 }
 
