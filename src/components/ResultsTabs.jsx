@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { RefreshCw } from 'lucide-react'
@@ -9,6 +9,7 @@ import TcpTab from './tabs/TcpTab'
 import UdpTab from './tabs/UdpTab'
 import DnsTab from './tabs/DnsTab'
 import TracerouteTab from "./tabs/TracerouteTab.jsx";
+import { debounce } from '../lib/debounce.js';
 
 const ResultsTabs = ({ results, onFetchTabData }) => {
     const [activeTab, setActiveTab] = useState('info')
@@ -23,6 +24,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         dns: results.dns,
         traceroute: results.traceroute
     })
+    const [retryCounts, setRetryCounts] = useState({})
 
     // сброс при новом запросе
     useEffect(() => {
@@ -37,11 +39,12 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         })
         setLoadingTabs({})
         setTabErrors({})
-        setActiveTab('info') // возвращаем на первую вкладку
+        setRetryCounts({}) // Сбрасываем счетчики попыток
+        // Убираем автоматическое переключение на первую вкладку
         
-        // Автоматически загружаем данные для вкладки info при первом отображении
-        if (results && results.checkUids && results.checkUids.length > 0) {
-            handleTabChange('info')
+        // Автоматически загружаем данные для активной вкладки при первом отображении
+        if (results && results.checkUids && results.checkUids.geoip) {
+            handleTabChange(activeTab)
         }
     }, [results])
 
@@ -77,9 +80,36 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         }
     }
 
+    // Автоматическое обновление через 1.5 секунды, если нет данных для текущей вкладки
+    useEffect(() => {
+        const currentTabData = tabData[activeTab]
+        const currentRetryCount = retryCounts[activeTab] || 0
+        
+        // Если нет данных, нет ошибки, не загружается и не превышен лимит попыток (10)
+        if (currentTabData === null && 
+            !tabErrors[activeTab] && 
+            !loadingTabs[activeTab] && 
+            currentRetryCount < 10) {
+            
+            const timer = setTimeout(() => {
+                console.log(`Auto-refreshing tab ${activeTab} after 1.5s (attempt ${currentRetryCount + 1}/10)`)
+                
+                // Увеличиваем счетчик попыток для текущей вкладки
+                setRetryCounts(prev => ({ ...prev, [activeTab]: currentRetryCount + 1 }))
+                
+                handleRefresh(activeTab)
+            }, 1500)
+
+            return () => clearTimeout(timer)
+        } else if (currentRetryCount >= 10) {
+            console.log(`Tab ${activeTab} reached maximum retry attempts (10/10). Auto-refresh stopped.`)
+        }
+    }, [activeTab, tabData, tabErrors, loadingTabs, retryCounts])
+
     const handleRetry = (tabId) => {
         setTabData(prev => ({ ...prev, [tabId]: null }))
         setTabErrors(prev => ({ ...prev, [tabId]: null }))
+        setRetryCounts(prev => ({ ...prev, [tabId]: 0 })) // Сбрасываем счетчик при ручном retry
         handleTabChange(tabId)
     }
 
@@ -90,6 +120,11 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         try {
             const data = await onFetchTabData(tabId)
             setTabData(prev => ({ ...prev, [tabId]: data }))
+            
+            // Сбрасываем счетчик попыток при успешной загрузке
+            if (data !== null) {
+                setRetryCounts(prev => ({ ...prev, [tabId]: 0 }))
+            }
         } catch (error) {
             setTabErrors(prev => ({
                 ...prev,
@@ -99,6 +134,14 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
             setLoadingTabs(prev => ({ ...prev, [tabId]: false }))
         }
     }
+
+    // Debounced version of handleRefresh (300ms delay)
+    const debouncedRefresh = useCallback(
+        debounce((tabId) => {
+            handleRefresh(tabId);
+        }, 300),
+        [onFetchTabData]
+    );
 
     const activeTabData = tabs.find(tab => tab.id === activeTab)
 
@@ -136,7 +179,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                     size="sm"
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        handleRefresh(tab.id)
+                                        debouncedRefresh(tab.id)
                                     }}
                                     disabled={loadingTabs[tab.id]}
                                     className="p-1 h-6 w-6 mr-2 hover:bg-muted"
@@ -158,7 +201,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleRefresh(activeTabData.id)}
+                                    onClick={() => debouncedRefresh(activeTabData.id)}
                                     disabled={loadingTabs[activeTabData.id]}
                                     className="flex items-center space-x-2"
                                 >

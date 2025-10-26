@@ -1,15 +1,15 @@
 import React from 'react'
 import { Map, Marker, Overlay } from 'pigeon-maps'
 
-const PigeonMapView = ({ coordinates, location }) => {
+const PigeonMapView = ({ coordinates, location, height = 256, className = "" }) => {
     const position = [coordinates.lat, coordinates.lng]
 
     return (
-        <div className="h-64 w-full rounded-lg overflow-hidden border">
+        <div className={`w-full rounded-lg overflow-hidden border ${className}`} style={{ height: height }}>
             <Map
                 center={position}
                 zoom={10}
-                height={256}
+                height={height}
                 metaWheelZoom={true}
                 metaWheelZoomWarning="Use Ctrl + Wheel to zoom"
             >

@@ -27,9 +27,9 @@ const DnsTab = ({ data, loading, error, onRetry }) => {
         return (
             <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No DNS data available</p>
-                <Button onClick={onRetry}>
-                    Fetch DNS Records
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                    Open this tab to fetch DNS records
+                </p>
             </div>
         )
     }

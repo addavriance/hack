@@ -47,31 +47,41 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
                 <CardTitle>{agentData.agent}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-                {/* Basic Information */}
-                <div className="space-y-2">
-                    <InfoRow label="Target" value={target} />
-                    <InfoRow label="IP Address" value={agentData.ip} />
-                    <InfoRow label="Host Name" value={agentData.hostname} />
-                    <InfoRow label="IP Range" value={agentData.ipRange} />
-                    <InfoRow label="ASN" value={agentData.asn} />
-                    <InfoRow label="ISP / Organization" value={agentData.isp} />
-                    <InfoRow label="Country" value={agentData.country} />
-                    <InfoRow label="Region" value={agentData.region} />
-                    <InfoRow label="City" value={agentData.city} />
-                    <InfoRow label="Postal Code" value={agentData.postalCode} />
-                    <InfoRow label="Timezone" value={agentData.timezone} />
-                    <InfoRow label="Local Time" value={agentData.localTime} />
-                </div>
+                {/* Desktop: Horizontal layout, Mobile/Tablet: Vertical layout */}
+                <div className="flex flex-col gap-8 lg:flex-row lg:gap-6">
+                    {/* Basic Information Section */}
+                    <div className="flex-1 space-y-2">
+                        <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+                        <InfoRow label="Target" value={target} />
+                        <InfoRow label="IP Address" value={agentData.ip} />
+                        <InfoRow label="Host Name" value={agentData.hostname} />
+                        <InfoRow label="IP Range" value={agentData.ipRange} />
+                        <InfoRow label="ASN" value={agentData.asn} />
+                        <InfoRow label="ISP / Organization" value={agentData.isp} />
+                        <InfoRow label="Country" value={agentData.country} />
+                        <InfoRow label="Region" value={agentData.region} />
+                        <InfoRow label="City" value={agentData.city} />
+                        <InfoRow label="Postal Code" value={agentData.postalCode} />
+                        <InfoRow label="Timezone" value={agentData.timezone} />
+                        <InfoRow label="Local Time" value={agentData.localTime} />
+                    </div>
 
-                {/* Location Map */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Location Map</h3>
-                    <MapView
-                        coordinates={agentData.coordinates}
-                        location={`${agentData.city}, ${agentData.country}`}
-                    />
-                    <div className="text-sm text-muted-foreground text-center">
-                        Coordinates: {agentData.coordinates.lat.toFixed(4)}, {agentData.coordinates.lng.toFixed(4)}
+                    {/* Location Map Section */}
+                    <div className="flex-1 flex flex-col">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">Location Map</h3>
+                            <div className="text-sm text-muted-foreground">
+                                {agentData.coordinates.lat.toFixed(4)}, {agentData.coordinates.lng.toFixed(4)}
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <MapView
+                                coordinates={agentData.coordinates}
+                                location={`${agentData.city}, ${agentData.country}`}
+                                height="100%"
+                                className="h-full"
+                            />
+                        </div>
                     </div>
                 </div>
             </CardContent>

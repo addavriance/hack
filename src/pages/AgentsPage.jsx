@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import AgentsTable from '../components/AgentsTable'
@@ -6,6 +6,7 @@ import CreateAgentModal from '../components/modals/CreateAgentModal'
 import { apiService } from '../services/api'
 import { useAuthContext } from '../contexts/AuthContext'
 import { AlertCircle, RefreshCw } from 'lucide-react'
+import { debounce } from '../lib/debounce.js'
 
 const AgentsPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false)
@@ -87,6 +88,12 @@ const AgentsPage = () => {
         loadAgents(true)
     }
 
+    // Debounced version of handleRefresh (400ms delay)
+    const debouncedRefresh = useCallback(
+        debounce(handleRefresh, 400),
+        [isAuthenticated]
+    );
+
     if (!isAuthenticated) {
         return (
             <div className="container mx-auto px-4 py-8">
@@ -102,12 +109,13 @@ const AgentsPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 min-h-[60vh]">
-            <div className="flex items-center justify-between mb-6">
+            {/* Desktop layout - header with buttons on the right */}
+            <div className="hidden sm:flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold">Agents Management</h1>
                 <div className="flex items-center space-x-2">
                     <Button
                         variant="outline"
-                        onClick={handleRefresh}
+                        onClick={debouncedRefresh}
                         disabled={loading || refreshing}
                     >
                         <RefreshCw className={`h-4 w-4 mr-2 ${loading || refreshing ? 'animate-spin' : ''}`} />
@@ -115,6 +123,25 @@ const AgentsPage = () => {
                     </Button>
                     <Button onClick={() => setShowCreateModal(true)}>
                         Add New Agent
+                    </Button>
+                </div>
+            </div>
+            
+            {/* Mobile layout - header first, then buttons below */}
+            <div className="sm:hidden mb-6">
+                <h1 className="text-2xl font-bold mb-4">Agents Management</h1>
+                <div className="flex items-center justify-start space-x-2">
+                    <Button
+                        variant="outline"
+                        onClick={debouncedRefresh}
+                        disabled={loading || refreshing}
+                        size="sm"
+                    >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${loading || refreshing ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                    <Button onClick={() => setShowCreateModal(true)} size="sm">
+                        Add Agent
                     </Button>
                 </div>
             </div>
@@ -136,7 +163,7 @@ const AgentsPage = () => {
                         loading={loading}
                         onUpdate={handleAgentUpdate}
                         onDelete={handleAgentDelete}
-                        onRefresh={handleRefresh}
+                        onRefresh={debouncedRefresh}
                     />
                 </CardContent>
             </Card>

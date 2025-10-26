@@ -1,10 +1,11 @@
-import React, {useState, useRef} from 'react'
+import React, {useState, useRef, useCallback} from 'react'
 import {Card, CardContent, CardHeader, CardTitle} from './ui/card'
 import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
 import {Scan, ArrowDown, RefreshCw} from 'lucide-react'
 import {apiService} from "../services/api.js";
+import {debounce} from "../lib/debounce.js";
 
 const NetworkChecker = () => {
     const [target, setTarget] = useState('')
@@ -93,10 +94,10 @@ const NetworkChecker = () => {
         setResultsKey(prev => prev + 1);
 
         try {
-            // Создаем комплексную проверку с нормализованным target
-            const checkResults = await apiService.createComprehensiveCheck(normalizedTarget, port);
+            // Создаем только базовую проверку (GeoIP для Basic Info)
+            const geoipCheck = await apiService.createGeoIPCheck(normalizedTarget);
             
-            console.log('Check results:', checkResults);
+            console.log('Initial check result:', geoipCheck);
 
             // Инициализируем результаты с базовой информацией
             setResults({
@@ -104,7 +105,15 @@ const NetworkChecker = () => {
                 originalTarget: target, // Сохраняем оригинальный ввод пользователя
                 port: port || 'N/A',
                 timestamp: new Date().toISOString(),
-                checkUids: checkResults.map(result => result.uid), // Сохраняем UID проверок
+                checkUids: {
+                    geoip: geoipCheck.uid, // Сохраняем UID базовой проверки
+                    http: null,
+                    ping: null,
+                    tcp: null,
+                    udp: null,
+                    dns: null,
+                    traceroute: null,
+                },
                 info: null,
                 http: null,
                 ping: null,
@@ -116,8 +125,8 @@ const NetworkChecker = () => {
 
             setIsLoading(false);
         } catch (error) {
-            console.error('Error creating checks:', error);
-            setTargetError('Failed to create checks. Please try again.');
+            console.error('Error creating initial check:', error);
+            setTargetError('Failed to create initial check. Please try again.');
             setIsLoading(false);
         }
     }
@@ -131,81 +140,112 @@ const NetworkChecker = () => {
         console.log(`Fetching data for tab: ${tabId}`, results.checkUids);
 
         try {
-            // Получаем данные для конкретной вкладки
-            let checkUid = null;
+            let checkUid = results.checkUids[tabId];
             let checkType = null;
 
-            // Определяем какой UID использовать для каждой вкладки
-            switch (tabId) {
-                case "info":
-                    // Для info используем GeoIP данные
-                    checkUid = results.checkUids.find((uid, index) => {
-                        // Предполагаем, что GeoIP это 4-й элемент (индекс 3)
-                        return index === 3;
-                    });
-                    checkType = "geoip";
-                    console.log(`Info tab - using checkUid: ${checkUid}, type: ${checkType}`);
-                    break;
-                case "http":
-                    // Для HTTP используем HTTP данные
-                    checkUid = results.checkUids.find((uid, index) => {
-                        // Предполагаем, что HTTP это 2-й элемент (индекс 1)
-                        return index === 1;
-                    });
-                    checkType = "http";
-                    break;
-                case "ping":
-                    // Для ping используем ping данные
-                    checkUid = results.checkUids.find((uid, index) => {
-                        // Предполагаем, что ping это 3-й элемент (индекс 2)
-                        return index === 2;
-                    });
-                    checkType = "ping";
-                    break;
-                case "traceroute":
-                    // Для traceroute используем traceroute данные
-                    checkUid = results.checkUids.find((uid, index) => {
-                        // Предполагаем, что traceroute это 5-й элемент (индекс 4)
-                        return index === 4;
-                    });
-                    checkType = "traceroute";
-                    break;
-                case "tcp":
-                    // Для TCP используем tcp_and_udp данные
-                    // TCP проверка создается только если указан порт
-                    if (results.port && results.port !== 'N/A') {
-                        // TCP проверка - предпоследний элемент (индекс length-2)
-                        checkUid = results.checkUids[results.checkUids.length - 2];
-                    } else {
-                        // Если порт не указан, TCP проверка не создается
-                        console.log('No port specified, TCP check not available');
+            // Если проверка еще не создана, создаем её
+            if (!checkUid) {
+                console.log(`Creating new check for tab: ${tabId}`);
+                
+                switch (tabId) {
+                    case "info":
+                        // GeoIP уже создан при инициализации
+                        checkUid = results.checkUids.geoip;
+                        checkType = "geoip";
+                        break;
+                    case "http":
+                        const httpCheck = await apiService.createHTTPCheck(results.target);
+                        checkUid = httpCheck.uid;
+                        checkType = "http";
+                        // Обновляем результаты с новым UID
+                        setResults(prev => ({
+                            ...prev,
+                            checkUids: { ...prev.checkUids, http: checkUid }
+                        }));
+                        break;
+                    case "ping":
+                        const pingCheck = await apiService.createPingCheck(results.target);
+                        checkUid = pingCheck.uid;
+                        checkType = "ping";
+                        setResults(prev => ({
+                            ...prev,
+                            checkUids: { ...prev.checkUids, ping: checkUid }
+                        }));
+                        break;
+                    case "traceroute":
+                        const tracerouteCheck = await apiService.createTracerouteCheck(results.target);
+                        checkUid = tracerouteCheck.uid;
+                        checkType = "traceroute";
+                        setResults(prev => ({
+                            ...prev,
+                            checkUids: { ...prev.checkUids, traceroute: checkUid }
+                        }));
+                        break;
+                    case "tcp":
+                        if (results.port && results.port !== 'N/A') {
+                            const tcpCheck = await apiService.createTCPUDPCheck(results.target, parseInt(results.port), "tcp");
+                            checkUid = tcpCheck.uid;
+                            checkType = "tcp_and_udp";
+                            setResults(prev => ({
+                                ...prev,
+                                checkUids: { ...prev.checkUids, tcp: checkUid }
+                            }));
+                        } else {
+                            console.log('No port specified, TCP check not available');
+                            return null;
+                        }
+                        break;
+                    case "udp":
+                        if (results.port && results.port !== 'N/A') {
+                            const udpCheck = await apiService.createTCPUDPCheck(results.target, parseInt(results.port), "udp");
+                            checkUid = udpCheck.uid;
+                            checkType = "tcp_and_udp";
+                            setResults(prev => ({
+                                ...prev,
+                                checkUids: { ...prev.checkUids, udp: checkUid }
+                            }));
+                        } else {
+                            console.log('No port specified, UDP check not available');
+                            return null;
+                        }
+                        break;
+                    case "dns":
+                        const dnsCheck = await apiService.createDNSCheck(results.target);
+                        checkUid = dnsCheck.uid;
+                        checkType = "dns";
+                        setResults(prev => ({
+                            ...prev,
+                            checkUids: { ...prev.checkUids, dns: checkUid }
+                        }));
+                        break;
+                    default:
                         return null;
-                    }
-                    checkType = "tcp_and_udp";
-                    break;
-                case "udp":
-                    // Для UDP используем tcp_and_udp данные с протоколом UDP
-                    // UDP проверка создается только если указан порт
-                    if (results.port && results.port !== 'N/A') {
-                        // UDP проверка - последний элемент (индекс length-1)
-                        checkUid = results.checkUids[results.checkUids.length - 1];
-                    } else {
-                        // Если порт не указан, UDP проверка не создается
-                        console.log('No port specified, UDP check not available');
+                }
+            } else {
+                // Определяем тип проверки для существующего UID
+                switch (tabId) {
+                    case "info":
+                        checkType = "geoip";
+                        break;
+                    case "http":
+                        checkType = "http";
+                        break;
+                    case "ping":
+                        checkType = "ping";
+                        break;
+                    case "traceroute":
+                        checkType = "traceroute";
+                        break;
+                    case "tcp":
+                    case "udp":
+                        checkType = "tcp_and_udp";
+                        break;
+                    case "dns":
+                        checkType = "dns";
+                        break;
+                    default:
                         return null;
-                    }
-                    checkType = "tcp_and_udp";
-                    break;
-                case "dns":
-                    // Для DNS используем DNS данные
-                    checkUid = results.checkUids.find((uid, index) => {
-                        // Предполагаем, что DNS это 1-й элемент (индекс 0)
-                        return index === 0;
-                    });
-                    checkType = "dns";
-                    break;
-                default:
-                    return null;
+                }
             }
 
             if (!checkUid) {
@@ -359,6 +399,11 @@ const NetworkChecker = () => {
         const firstTask = tasks[0];
         const result = firstTask?.result;
         
+        // Если нет hops или hops пустой, возвращаем null для продолжения автообновления
+        if (!result?.hops || result.hops.length === 0) {
+            return null;
+        }
+        
         return {
             target: result?.target || 'N/A',
             hops: result?.hops || [],
@@ -441,26 +486,39 @@ const NetworkChecker = () => {
         setTargetError('');
 
         try {
-            // Используем нормализованный target из результатов
-            const normalizedTarget = results.target;
-            const checkResults = await apiService.createComprehensiveCheck(normalizedTarget, port);
+            // Создаем новую GeoIP проверку (базовая проверка)
+            const geoipCheck = await apiService.createGeoIPCheck(results.target);
             
-            console.log('Refreshed check results:', checkResults);
+            console.log('Refreshed initial check result:', geoipCheck);
 
-            // Обновляем результаты с новыми UID проверок
+            // Обновляем результаты с новым UID базовой проверки
             setResults(prev => ({
                 ...prev,
-                checkUids: checkResults.map(result => result.uid),
+                checkUids: {
+                    geoip: geoipCheck.uid,
+                    http: null, // Сбрасываем остальные проверки
+                    ping: null,
+                    tcp: null,
+                    udp: null,
+                    dns: null,
+                    traceroute: null,
+                },
                 timestamp: new Date().toISOString(),
             }));
 
             setIsLoading(false);
         } catch (error) {
-            console.error('Error refreshing checks:', error);
-            setTargetError('Failed to refresh checks. Please try again.');
+            console.error('Error refreshing initial check:', error);
+            setTargetError('Failed to refresh initial check. Please try again.');
             setIsLoading(false);
         }
     }
+
+    // Debounced version of handleRefreshAll (500ms delay)
+    const debouncedRefreshAll = useCallback(
+        debounce(handleRefreshAll, 500),
+        [results, port]
+    );
 
     const EmptyResultsPlaceholder = () => (
         <Card className="mt-4 mb-10 max-w-[70rem] mx-auto">
@@ -561,21 +619,23 @@ const NetworkChecker = () => {
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <h2 className="text-xl font-semibold">Diagnostic Results</h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}
-                                    {results.originalTarget && results.originalTarget !== results.target && (
-                                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                            Auto-corrected from: {results.originalTarget}
-                                        </span>
-                                    )}
-                                </p>
+                                <div className="text-sm text-muted-foreground">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span>Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}</span>
+                                        {results.originalTarget && results.originalTarget !== results.target && (
+                                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                Auto-corrected from: {results.originalTarget}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                     Last updated: {new Date(results.timestamp).toLocaleString()}
                                 </p>
                             </div>
                             <Button
                                 variant="outline"
-                                onClick={handleRefreshAll}
+                                onClick={debouncedRefreshAll}
                                 disabled={isLoading}
                                 className="flex items-center space-x-2"
                             >

@@ -40,9 +40,9 @@ const TracerouteTab = ({ data, loading, error, onRetry }) => {
         return (
             <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No traceroute data available</p>
-                <Button onClick={onRetry}>
-                    Run Traceroute
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                    Open this tab to run traceroute
+                </p>
             </div>
         )
     }

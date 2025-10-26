@@ -46,8 +46,29 @@ export const AuthProvider = ({children}) => {
         setError(null)
 
         try {
-            await apiService.register(username, password)
-            return {success: true}
+            const response = await apiService.register(username, password)
+            
+            // Если API регистрации возвращает токены, автоматически входим
+            if (response && response.login_session_token && response.login_session_uid) {
+                // Устанавливаем токены в API сервисе
+                apiService.setToken(response.login_session_token)
+                apiService.setUID(response.login_session_uid)
+                
+                // Устанавливаем пользователя в контексте
+                const userData = {
+                    username,
+                    login_session_uid: response.login_session_uid
+                }
+                setUser(userData)
+                setIsAuthenticated(true)
+                localStorage.setItem('user', JSON.stringify(userData))
+                
+                return {success: true, autoLogin: true}
+            } else {
+                // Если токены не получены, выполняем обычный логин
+                const loginResult = await login(username, password)
+                return {success: loginResult.success, autoLogin: true, error: loginResult.error}
+            }
         } catch (error) {
             const errorMessage = error.message || 'Registration failed'
             setError(errorMessage)

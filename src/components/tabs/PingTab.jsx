@@ -27,9 +27,9 @@ const PingTab = ({ data, loading, error, onRetry }) => {
         return (
             <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No ping data available</p>
-                <Button onClick={onRetry}>
-                    Run Ping Test
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                    Open this tab to run ping test
+                </p>
             </div>
         )
     }
