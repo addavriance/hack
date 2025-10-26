@@ -33,13 +33,19 @@ const LoginModal = ({ onClose }) => {
             if (isLogin) {
                 onClose()
             } else {
-                // После успешной регистрации показываем сообщение и переключаем на логин
-                setRegistrationSuccess(true)
-                setFormData({ username: '', password: '' })
-                setTimeout(() => {
-                    setIsLogin(true)
-                    setRegistrationSuccess(false)
-                }, 2000)
+                // Проверяем, был ли выполнен автоматический вход
+                if (result.autoLogin) {
+                    // Автоматический вход выполнен, закрываем модальное окно
+                    onClose()
+                } else {
+                    // После успешной регистрации показываем сообщение и переключаем на логин
+                    setRegistrationSuccess(true)
+                    setFormData({ username: '', password: '' })
+                    setTimeout(() => {
+                        setIsLogin(true)
+                        setRegistrationSuccess(false)
+                    }, 2000)
+                }
             }
         } else {
             setLocalError(result.error)
