@@ -70,7 +70,7 @@ const Header = () => {
     return (
         <>
             <header className="border-b bg-background sticky top-0 z-50">
-                <div className="container mx-auto px-4 py-4 sm:py-6">
+                <div className="container mx-auto px-4 py-2 sm:py-3">
                     <div className="flex items-center justify-between">
                         {/* Logo and mobile menu button */}
                         <div className="flex items-center space-x-4">
