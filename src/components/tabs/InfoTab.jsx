@@ -46,30 +46,26 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
             <CardHeader>
                 <CardTitle>{agentData.agent}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-                <InfoRow label="Target" value={target} />
-                <InfoRow label="IP Address" value={agentData.ip} />
-                <InfoRow label="Host Name" value={agentData.hostname} />
-                <InfoRow label="IP Range" value={agentData.ipRange} />
-                <InfoRow label="ASN" value={agentData.asn} />
-                <InfoRow label="ISP / Organization" value={agentData.isp} />
-                <InfoRow label="Country" value={agentData.country} />
-                <InfoRow label="Region" value={agentData.region} />
-                <InfoRow label="City" value={agentData.city} />
-                <InfoRow label="Postal Code" value={agentData.postalCode} />
-                <InfoRow label="Timezone" value={agentData.timezone} />
-                <InfoRow label="Local Time" value={agentData.localTime} />
-            </CardContent>
-        </Card>
-    )
+            <CardContent className="space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-2">
+                    <InfoRow label="Target" value={target} />
+                    <InfoRow label="IP Address" value={agentData.ip} />
+                    <InfoRow label="Host Name" value={agentData.hostname} />
+                    <InfoRow label="IP Range" value={agentData.ipRange} />
+                    <InfoRow label="ASN" value={agentData.asn} />
+                    <InfoRow label="ISP / Organization" value={agentData.isp} />
+                    <InfoRow label="Country" value={agentData.country} />
+                    <InfoRow label="Region" value={agentData.region} />
+                    <InfoRow label="City" value={agentData.city} />
+                    <InfoRow label="Postal Code" value={agentData.postalCode} />
+                    <InfoRow label="Timezone" value={agentData.timezone} />
+                    <InfoRow label="Local Time" value={agentData.localTime} />
+                </div>
 
-    const MapCard = ({ agentData }) => (
-        <Card>
-            <CardHeader>
-                <CardTitle>Location Map</CardTitle>
-            </CardHeader>
-            <CardContent>
+                {/* Location Map */}
                 <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Location Map</h3>
                     <MapView
                         coordinates={agentData.coordinates}
                         location={`${agentData.city}, ${agentData.country}`}
@@ -85,10 +81,7 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
     return (
         <div className="space-y-6">
             {data.map((agentData, index) => (
-                <div key={index} className="space-y-4">
-                    <AgentCard agentData={agentData} index={index} />
-                    <MapCard agentData={agentData} />
-                </div>
+                <AgentCard key={index} agentData={agentData} index={index} />
             ))}
         </div>
     )
