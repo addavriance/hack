@@ -3,7 +3,7 @@ import {Card, CardContent, CardHeader, CardTitle} from './ui/card'
 import {Button} from './ui/button'
 import {Input} from './ui/input'
 import ResultsTabs from './ResultsTabs'
-import {Scan, ArrowDown} from 'lucide-react'
+import {Scan, ArrowDown, RefreshCw} from 'lucide-react'
 import {apiService} from "../services/api.js";
 
 const NetworkChecker = () => {
@@ -32,6 +32,30 @@ const NetworkChecker = () => {
         return 'string';
     }
 
+    const normalizeInput = (input) => {
+        const trimmedInput = input.trim();
+        
+        // Если это IP адрес, возвращаем как есть
+        const ipPattern = /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
+        if (ipPattern.test(trimmedInput)) {
+            return trimmedInput;
+        }
+        
+        // Если это домен без протокола, добавляем https://
+        const domainPattern = /^([\w\d-]+\.)+[\w]{2,}$/i;
+        if (domainPattern.test(trimmedInput)) {
+            return `https://${trimmedInput}`;
+        }
+        
+        // Если уже есть протокол, возвращаем как есть
+        if (/^https?:\/\//i.test(trimmedInput)) {
+            return trimmedInput;
+        }
+        
+        // Для остальных случаев возвращаем как есть
+        return trimmedInput;
+    }
+
 
     const handleTargetChange = (e) => {
         const value = e.target.value
@@ -50,7 +74,9 @@ const NetworkChecker = () => {
             return
         }
 
-        const targetType = validateInput(target);
+        // Нормализуем ввод (добавляем https:// если нужно)
+        const normalizedTarget = normalizeInput(target);
+        const targetType = validateInput(normalizedTarget);
 
         if (targetType === 'string') {
             setTargetError('Please enter a valid URL or IP address')
@@ -63,21 +89,22 @@ const NetworkChecker = () => {
         }
 
         setIsLoading(true)
-
         setResults(null)
         setResultsKey(prev => prev + 1);
 
-        const checkData = await apiService.createIPURLCheck(
-            targetType === 'ip' ? [target] : null,
-            targetType === 'url' || targetType === 'domain' ? target : null, 'geoip');
+        try {
+            // Создаем комплексную проверку с нормализованным target
+            const checkResults = await apiService.createComprehensiveCheck(normalizedTarget, port);
+            
+            console.log('Check results:', checkResults);
 
-        console.log(checkData);
-
-        setTimeout(() => {
+            // Инициализируем результаты с базовой информацией
             setResults({
-                target,
+                target: normalizedTarget, // Используем нормализованный target
+                originalTarget: target, // Сохраняем оригинальный ввод пользователя
                 port: port || 'N/A',
                 timestamp: new Date().toISOString(),
+                checkUids: checkResults.map(result => result.uid), // Сохраняем UID проверок
                 info: null,
                 http: null,
                 ping: null,
@@ -85,31 +112,273 @@ const NetworkChecker = () => {
                 udp: null,
                 dns: null,
                 traceroute: null,
-            })
-            setIsLoading(false)
-        }, 1000)
+            });
+
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error creating checks:', error);
+            setTargetError('Failed to create checks. Please try again.');
+            setIsLoading(false);
+        }
     }
 
     const handleFetchTabData = async (tabId) => {
-        if (!results) return null;
+        if (!results || !results.checkUids) {
+            console.log('No results or checkUids available');
+            return null;
+        }
 
-        // switch (tabId) {
-        //     case "http":
-        //         ...
-        //     case "ping":
-        //         ...
-        //     case "traceroute":
-        //         ...
-        //     case "tcp":
-        //         ...
-        //     case "udp":
-        //         ...
-        //     case "dns":
-        //         ...
+        console.log(`Fetching data for tab: ${tabId}`, results.checkUids);
 
-        // }
+        try {
+            // Получаем данные для конкретной вкладки
+            let checkUid = null;
+            let checkType = null;
 
-        // return await fetchMockTabData(tabId, results.target, results.port)
+            // Определяем какой UID использовать для каждой вкладки
+            switch (tabId) {
+                case "info":
+                    // Для info используем GeoIP данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что GeoIP это 4-й элемент (индекс 3)
+                        return index === 3;
+                    });
+                    checkType = "geoip";
+                    console.log(`Info tab - using checkUid: ${checkUid}, type: ${checkType}`);
+                    break;
+                case "http":
+                    // Для HTTP используем HTTP данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что HTTP это 2-й элемент (индекс 1)
+                        return index === 1;
+                    });
+                    checkType = "http";
+                    break;
+                case "ping":
+                    // Для ping используем ping данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что ping это 3-й элемент (индекс 2)
+                        return index === 2;
+                    });
+                    checkType = "ping";
+                    break;
+                case "traceroute":
+                    // Для traceroute используем traceroute данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что traceroute это 5-й элемент (индекс 4)
+                        return index === 4;
+                    });
+                    checkType = "traceroute";
+                    break;
+                case "tcp":
+                    // Для TCP используем tcp_and_udp данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что TCP это 6-й элемент (индекс 5)
+                        return index === 5;
+                    });
+                    checkType = "tcp_and_udp";
+                    break;
+                case "dns":
+                    // Для DNS используем DNS данные
+                    checkUid = results.checkUids.find((uid, index) => {
+                        // Предполагаем, что DNS это 1-й элемент (индекс 0)
+                        return index === 0;
+                    });
+                    checkType = "dns";
+                    break;
+                default:
+                    return null;
+            }
+
+            if (!checkUid) {
+                console.warn(`No check UID found for tab: ${tabId}`);
+                return null;
+            }
+
+            // Получаем данные проверки
+            const checkData = await apiService.getCheck(checkUid);
+            
+            // Обрабатываем данные в зависимости от типа
+            return processCheckData(checkData, checkType, tabId);
+        } catch (error) {
+            console.error(`Error fetching data for tab ${tabId}:`, error);
+            throw error;
+        }
+    }
+
+    // Функция для обработки данных проверки
+    const processCheckData = (checkData, checkType, tabId) => {
+        console.log(`Processing check data for ${tabId}:`, checkData);
+        
+        if (!checkData || !checkData.tasks || checkData.tasks.length === 0) {
+            console.log(`No tasks found in check data for ${tabId}`);
+            return null;
+        }
+
+        // Находим все задачи с нужным типом
+        const tasks = checkData.tasks.filter(t => t.payload && t.payload.type === checkType);
+        if (!tasks || tasks.length === 0) {
+            console.log(`No tasks found for type ${checkType} in ${tabId}`);
+            return null;
+        }
+
+        console.log(`Found ${tasks.length} tasks for ${tabId}:`, tasks);
+
+        // Преобразуем данные в формат, ожидаемый компонентами вкладок
+        switch (tabId) {
+            case "info":
+                return processGeoIPData(tasks);
+            case "http":
+                return processHTTPData(tasks);
+            case "ping":
+                return processPingData(tasks);
+            case "traceroute":
+                return processTracerouteData(tasks);
+            case "tcp":
+                return processTCPData(tasks);
+            case "dns":
+                return processDNSData(tasks);
+            default:
+                return tasks;
+        }
+    }
+
+    // Обработчики для каждого типа данных
+    const processGeoIPData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        // Обрабатываем данные от всех агентов
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            if (!result || !result.items || result.items.length === 0) {
+                return {
+                    agent: agentName,
+                    ip: 'N/A',
+                    hostname: 'N/A',
+                    ipRange: 'N/A',
+                    asn: 'N/A',
+                    isp: 'N/A',
+                    country: 'N/A',
+                    region: 'N/A',
+                    city: 'N/A',
+                    postalCode: 'N/A',
+                    timezone: 'N/A',
+                    localTime: new Date().toLocaleString(),
+                    coordinates: { lat: 0, lng: 0 }
+                };
+            }
+            
+            const item = result.items[0]; // Берем первый элемент из items
+            return {
+                agent: agentName,
+                ip: item.ip || 'N/A',
+                hostname: item.hostname || 'N/A',
+                ipRange: item.ipRange || 'N/A',
+                asn: item.asn || 'N/A',
+                isp: item.organization || 'N/A',
+                country: item.country || 'N/A',
+                region: item.region || 'N/A',
+                city: item.city || 'N/A',
+                postalCode: item.postal_code || 'N/A',
+                timezone: item.time_zone || 'N/A',
+                localTime: new Date().toLocaleString(),
+                coordinates: {
+                    lat: item.latitude || 0,
+                    lng: item.longitude || 0
+                }
+            };
+        });
+    }
+
+    const processHTTPData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            return {
+                location: agentName,
+                result: result?.error ? 'Failed' : 'Success',
+                code: result?.status_code || 'N/A',
+                responseTime: 'N/A',
+                ip: 'N/A',
+                ssl: result?.final_url && result.final_url.startsWith('https://'),
+                headers: result?.headers || {},
+                server: result?.headers?.server || 'N/A'
+            };
+        });
+    }
+
+    const processPingData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            return {
+                location: agentName,
+                packetsSent: result?.total || 0,
+                packetsReceived: result?.live || 0,
+                packetLoss: result?.total ? `${Math.round(((result.total - (result.live || 0)) / result.total) * 100)}%` : '0%',
+                minTime: result?.min_delay ? `${result.min_delay.toFixed(2)}ms` : 'N/A',
+                avgTime: result?.average_delay ? `${result.average_delay.toFixed(2)}ms` : 'N/A',
+                maxTime: result?.max_delay ? `${result.max_delay.toFixed(2)}ms` : 'N/A',
+                ip: 'N/A'
+            };
+        });
+    }
+
+    const processTracerouteData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        // Для traceroute возвращаем данные от первого агента
+        const firstTask = tasks[0];
+        const result = firstTask?.result;
+        
+        return {
+            target: result?.target || 'N/A',
+            hops: result?.hops || [],
+            error: result?.error || null
+        };
+    }
+
+    const processTCPData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        return tasks.map((task, index) => {
+            const result = task.result;
+            const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
+            
+            return {
+                location: agentName,
+                port: result?.port || 'N/A',
+                protocol: result?.protocol || 'tcp',
+                reachable: result?.reachable || false,
+                latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
+                ip: result?.ip || 'N/A'
+            };
+        });
+    }
+
+    const processDNSData = (tasks) => {
+        if (!tasks || tasks.length === 0) return null;
+        
+        // Для DNS возвращаем данные от первого агента
+        const firstTask = tasks[0];
+        const result = firstTask?.result;
+        
+        return {
+            a_records: result?.a_records || [],
+            aaaa_records: result?.aaaa_records || [],
+            mx_records: result?.mx_records || [],
+            ns_records: result?.ns_records || [],
+            cname_records: result?.cname_records || [],
+            txt_records: result?.txt_records || []
+        };
     }
 
     const handleTargetKeyPress = (e) => {
@@ -121,6 +390,37 @@ const NetworkChecker = () => {
     const handlePortKeyPress = (e) => {
         if (e.key === 'Enter') {
             handleCheck()
+        }
+    }
+
+    const handleRefreshAll = async () => {
+        if (!results || !results.checkUids) {
+            console.log('No results to refresh');
+            return;
+        }
+
+        setIsLoading(true);
+        setTargetError('');
+
+        try {
+            // Используем нормализованный target из результатов
+            const normalizedTarget = results.target;
+            const checkResults = await apiService.createComprehensiveCheck(normalizedTarget, port);
+            
+            console.log('Refreshed check results:', checkResults);
+
+            // Обновляем результаты с новыми UID проверок
+            setResults(prev => ({
+                ...prev,
+                checkUids: checkResults.map(result => result.uid),
+                timestamp: new Date().toISOString(),
+            }));
+
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error refreshing checks:', error);
+            setTargetError('Failed to refresh checks. Please try again.');
+            setIsLoading(false);
         }
     }
 
@@ -168,7 +468,7 @@ const NetworkChecker = () => {
                                 <div className="flex-1 space-y-2">
                                     <label className="text-sm font-medium">Target (URL or IP)</label>
                                     <Input
-                                        placeholder="example.com or 192.168.1.1"
+                                        placeholder="google.com, https://example.com, or 192.168.1.1"
                                         value={target}
                                         onChange={handleTargetChange}
                                         onKeyPress={handleTargetKeyPress}
@@ -178,8 +478,7 @@ const NetworkChecker = () => {
                                         <p className="text-sm text-destructive">{targetError}</p>
                                     )}
                                     <p className="text-xs text-muted-foreground">
-                                        Tip: Type <kbd className="px-1 py-0.5 bg-muted rounded text-xs">:</kbd> to
-                                        quickly jump to port field
+                                        Tip: You can enter just the domain (e.g., google.com) - we'll add https:// automatically
                                     </p>
                                 </div>
 
@@ -220,6 +519,33 @@ const NetworkChecker = () => {
                 {/* Результаты или плейсхолдер */}
                 {results ? (
                     <div className="p-4">
+                        {/* Results Header with Refresh Button */}
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 className="text-xl font-semibold">Diagnostic Results</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Target: {results.target} {results.port !== 'N/A' && `:${results.port}`}
+                                    {results.originalTarget && results.originalTarget !== results.target && (
+                                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                            Auto-corrected from: {results.originalTarget}
+                                        </span>
+                                    )}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Last updated: {new Date(results.timestamp).toLocaleString()}
+                                </p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                onClick={handleRefreshAll}
+                                disabled={isLoading}
+                                className="flex items-center space-x-2"
+                            >
+                                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                                <span>Refresh All</span>
+                            </Button>
+                        </div>
+                        
                         <ResultsTabs
                             key={resultsKey}
                             results={results}

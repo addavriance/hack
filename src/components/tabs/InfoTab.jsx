@@ -26,7 +26,7 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
         )
     }
 
-    if (!data) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
         return (
             <div className="text-center py-8 text-muted-foreground">
                 No data available
@@ -41,45 +41,48 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
         </div>
     )
 
+    const AgentCard = ({ agentData, index }) => (
+        <Card>
+            <CardHeader>
+                <CardTitle>{agentData.agent}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-2">
+                    <InfoRow label="Target" value={target} />
+                    <InfoRow label="IP Address" value={agentData.ip} />
+                    <InfoRow label="Host Name" value={agentData.hostname} />
+                    <InfoRow label="IP Range" value={agentData.ipRange} />
+                    <InfoRow label="ASN" value={agentData.asn} />
+                    <InfoRow label="ISP / Organization" value={agentData.isp} />
+                    <InfoRow label="Country" value={agentData.country} />
+                    <InfoRow label="Region" value={agentData.region} />
+                    <InfoRow label="City" value={agentData.city} />
+                    <InfoRow label="Postal Code" value={agentData.postalCode} />
+                    <InfoRow label="Timezone" value={agentData.timezone} />
+                    <InfoRow label="Local Time" value={agentData.localTime} />
+                </div>
+
+                {/* Location Map */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Location Map</h3>
+                    <MapView
+                        coordinates={agentData.coordinates}
+                        location={`${agentData.city}, ${agentData.country}`}
+                    />
+                    <div className="text-sm text-muted-foreground text-center">
+                        Coordinates: {agentData.coordinates.lat.toFixed(4)}, {agentData.coordinates.lng.toFixed(4)}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Basic Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                    <InfoRow label="Target" value={target} />
-                    <InfoRow label="IP Address" value={data.ip} />
-                    <InfoRow label="Host Name" value={data.hostname} />
-                    <InfoRow label="IP Range" value={data.ipRange} />
-                    <InfoRow label="ASN" value={data.asn} />
-                    <InfoRow label="ISP / Organization" value={data.isp} />
-                    <InfoRow label="Country" value={data.country} />
-                    <InfoRow label="Region" value={data.region} />
-                    <InfoRow label="City" value={data.city} />
-                    <InfoRow label="Postal Code" value={data.postalCode} />
-                    <InfoRow label="Timezone" value={data.timezone} />
-                    <InfoRow label="Local Time" value={data.localTime} />
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Location Map</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {/* Карта */}
-                            <MapView
-                                coordinates={data.coordinates}
-                                location={`${data.city}, ${data.country}`}
-                            />
-                        <div className="text-sm text-muted-foreground text-center">
-                            Coordinates: {data.coordinates.lat.toFixed(4)}, {data.coordinates.lng.toFixed(4)}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            {data.map((agentData, index) => (
+                <AgentCard key={index} agentData={agentData} index={index} />
+            ))}
         </div>
     )
 }
