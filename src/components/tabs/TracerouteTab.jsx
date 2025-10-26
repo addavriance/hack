@@ -57,8 +57,17 @@ const TracerouteTab = ({ data, loading, error, onRetry }) => {
                     <div className="border rounded-lg p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-semibold text-lg">Traceroute</h3>
-                            <div className="text-sm text-muted-foreground">
-                                Target: <span className="font-mono">{data.target}</span>
+                            <div className="flex items-center space-x-4">
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                    data.is_failed
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-green-100 text-green-800'
+                                }`}>
+                                    {data.is_failed ? 'Failed' : 'Success'}
+                                </span>
+                                <div className="text-sm text-muted-foreground">
+                                    Target: <span className="font-mono">{data.target}</span>
+                                </div>
                             </div>
                         </div>
 

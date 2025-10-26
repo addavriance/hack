@@ -326,7 +326,8 @@ const NetworkChecker = () => {
                     postalCode: 'N/A',
                     timezone: 'N/A',
                     localTime: new Date().toLocaleString(),
-                    coordinates: { lat: 0, lng: 0 }
+                    coordinates: { lat: 0, lng: 0 },
+                    is_failed: task.is_failed
                 };
             }
             
@@ -347,7 +348,8 @@ const NetworkChecker = () => {
                 coordinates: {
                     lat: item.latitude || 0,
                     lng: item.longitude || 0
-                }
+                },
+                is_failed: task.is_failed
             };
         });
     }
@@ -361,7 +363,7 @@ const NetworkChecker = () => {
             
             return {
                 location: agentName,
-                result: result?.error ? 'Failed' : 'Success',
+                result: task.is_failed ? 'Failed' : 'Success',
                 code: result?.status_code || 'N/A',
                 responseTime: 'N/A',
                 ip: 'N/A',
@@ -387,7 +389,8 @@ const NetworkChecker = () => {
                 minTime: result?.min_delay ? `${result.min_delay.toFixed(2)}ms` : 'N/A',
                 avgTime: result?.average_delay ? `${result.average_delay.toFixed(2)}ms` : 'N/A',
                 maxTime: result?.max_delay ? `${result.max_delay.toFixed(2)}ms` : 'N/A',
-                ip: 'N/A'
+                ip: 'N/A',
+                is_failed: task.is_failed
             };
         });
     }
@@ -407,7 +410,8 @@ const NetworkChecker = () => {
         return {
             target: result?.target || 'N/A',
             hops: result?.hops || [],
-            error: result?.error || null
+            error: result?.error || null,
+            is_failed: firstTask.is_failed
         };
     }
 
@@ -422,9 +426,10 @@ const NetworkChecker = () => {
                 location: agentName,
                 port: result?.port || 'N/A',
                 protocol: result?.protocol || 'tcp',
-                reachable: result?.reachable || false,
+                reachable: task.is_failed ? false : (result?.reachable || false),
                 latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
-                ip: result?.ip || 'N/A'
+                ip: result?.ip || 'N/A',
+                is_failed: task.is_failed
             };
         });
     }
@@ -440,9 +445,10 @@ const NetworkChecker = () => {
                 location: agentName,
                 port: result?.port || 'N/A',
                 protocol: result?.protocol || 'udp',
-                reachable: result?.reachable || false,
+                reachable: task.is_failed ? false : (result?.reachable || false),
                 latency: result?.latency_ms ? `${result.latency_ms.toFixed(2)}ms` : 'N/A',
-                ip: result?.ip || 'N/A'
+                ip: result?.ip || 'N/A',
+                is_failed: task.is_failed
             };
         });
     }
@@ -460,7 +466,8 @@ const NetworkChecker = () => {
             mx_records: result?.mx_records || [],
             ns_records: result?.ns_records || [],
             cname_records: result?.cname_records || [],
-            txt_records: result?.txt_records || []
+            txt_records: result?.txt_records || [],
+            is_failed: firstTask.is_failed
         };
     }
 

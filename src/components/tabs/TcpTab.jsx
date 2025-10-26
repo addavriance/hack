@@ -70,11 +70,13 @@ const TcpTab = ({ data, loading, error, onRetry, port }) => {
                                 <td className="py-3 font-mono">{result.port}</td>
                                 <td className="py-3">
                                     <span className={`px-2 py-1 rounded text-xs ${
-                                        result.reachable 
-                                            ? 'bg-green-100 text-green-800' 
-                                            : 'bg-red-100 text-red-800'
+                                        result.is_failed
+                                            ? 'bg-red-100 text-red-800'
+                                            : result.reachable 
+                                                ? 'bg-green-100 text-green-800' 
+                                                : 'bg-red-100 text-red-800'
                                     }`}>
-                                        {result.reachable ? 'Open' : 'Closed'}
+                                        {result.is_failed ? 'Failed' : (result.reachable ? 'Open' : 'Closed')}
                                     </span>
                                 </td>
                                 <td className="py-3">{result.latency}</td>

@@ -45,6 +45,7 @@ const PingTab = ({ data, loading, error, onRetry }) => {
                         <thead>
                         <tr className="border-b">
                             <th className="text-left py-3 font-medium">Location</th>
+                            <th className="text-left py-3 font-medium">Status</th>
                             <th className="text-left py-3 font-medium">Packets</th>
                             <th className="text-left py-3 font-medium">Packet Loss</th>
                             <th className="text-left py-3 font-medium">Min Time</th>
@@ -57,6 +58,15 @@ const PingTab = ({ data, loading, error, onRetry }) => {
                         {data.map((result, index) => (
                             <tr key={index} className="border-b hover:bg-muted/50">
                                 <td className="py-3">{result.location}</td>
+                                <td className="py-3">
+                                    <span className={`px-2 py-1 rounded text-xs ${
+                                        result.is_failed
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-green-100 text-green-800'
+                                    }`}>
+                                        {result.is_failed ? 'Failed' : 'Success'}
+                                    </span>
+                                </td>
                                 <td className="py-3">
                                     {result.packetsReceived}/{result.packetsSent}
                                 </td>
