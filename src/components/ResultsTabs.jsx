@@ -24,6 +24,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         dns: results.dns,
         traceroute: results.traceroute
     })
+    const [retryCounts, setRetryCounts] = useState({})
 
     // сброс при новом запросе
     useEffect(() => {
@@ -38,6 +39,7 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         })
         setLoadingTabs({})
         setTabErrors({})
+        setRetryCounts({}) // Сбрасываем счетчики попыток
         // Убираем автоматическое переключение на первую вкладку
         
         // Автоматически загружаем данные для активной вкладки при первом отображении
@@ -78,9 +80,36 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         }
     }
 
+    // Автоматическое обновление через 1.5 секунды, если нет данных для текущей вкладки
+    useEffect(() => {
+        const currentTabData = tabData[activeTab]
+        const currentRetryCount = retryCounts[activeTab] || 0
+        
+        // Если нет данных, нет ошибки, не загружается и не превышен лимит попыток (10)
+        if (currentTabData === null && 
+            !tabErrors[activeTab] && 
+            !loadingTabs[activeTab] && 
+            currentRetryCount < 10) {
+            
+            const timer = setTimeout(() => {
+                console.log(`Auto-refreshing tab ${activeTab} after 1.5s (attempt ${currentRetryCount + 1}/10)`)
+                
+                // Увеличиваем счетчик попыток для текущей вкладки
+                setRetryCounts(prev => ({ ...prev, [activeTab]: currentRetryCount + 1 }))
+                
+                handleRefresh(activeTab)
+            }, 1500)
+
+            return () => clearTimeout(timer)
+        } else if (currentRetryCount >= 10) {
+            console.log(`Tab ${activeTab} reached maximum retry attempts (10/10). Auto-refresh stopped.`)
+        }
+    }, [activeTab, tabData, tabErrors, loadingTabs, retryCounts])
+
     const handleRetry = (tabId) => {
         setTabData(prev => ({ ...prev, [tabId]: null }))
         setTabErrors(prev => ({ ...prev, [tabId]: null }))
+        setRetryCounts(prev => ({ ...prev, [tabId]: 0 })) // Сбрасываем счетчик при ручном retry
         handleTabChange(tabId)
     }
 
@@ -91,6 +120,11 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         try {
             const data = await onFetchTabData(tabId)
             setTabData(prev => ({ ...prev, [tabId]: data }))
+            
+            // Сбрасываем счетчик попыток при успешной загрузке
+            if (data !== null) {
+                setRetryCounts(prev => ({ ...prev, [tabId]: 0 }))
+            }
         } catch (error) {
             setTabErrors(prev => ({
                 ...prev,

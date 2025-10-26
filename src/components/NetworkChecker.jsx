@@ -399,6 +399,11 @@ const NetworkChecker = () => {
         const firstTask = tasks[0];
         const result = firstTask?.result;
         
+        // Если нет hops или hops пустой, возвращаем null для продолжения автообновления
+        if (!result?.hops || result.hops.length === 0) {
+            return null;
+        }
+        
         return {
             target: result?.target || 'N/A',
             hops: result?.hops || [],
