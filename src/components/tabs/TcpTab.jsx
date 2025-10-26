@@ -26,10 +26,21 @@ const TcpTab = ({ data, loading, error, onRetry, port }) => {
     if (!data || data.length === 0) {
         return (
             <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No TCP port data available</p>
-                <Button onClick={onRetry}>
-                    Check TCP Port {port || '(default)'}
-                </Button>
+                <p className="text-muted-foreground mb-4">
+                    {!port || port === 'N/A' 
+                        ? 'Please specify a port to run TCP diagnostics' 
+                        : 'No TCP port data available'
+                    }
+                </p>
+                {(!port || port === 'N/A') ? (
+                    <p className="text-sm text-muted-foreground">
+                        Enter a port number in the main form to enable TCP port checking
+                    </p>
+                ) : (
+                    <Button onClick={onRetry}>
+                        Check TCP Port {port}
+                    </Button>
+                )}
             </div>
         )
     }
