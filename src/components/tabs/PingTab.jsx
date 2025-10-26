@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 
 const PingTab = ({ data, loading, error, onRetry }) => {
@@ -35,12 +35,8 @@ const PingTab = ({ data, loading, error, onRetry }) => {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Ping Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
+        <CardContent>
+            <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                         <tr className="border-b">
@@ -88,8 +84,7 @@ const PingTab = ({ data, loading, error, onRetry }) => {
                         </tbody>
                     </table>
                 </div>
-            </CardContent>
-        </Card>
+        </CardContent>
     )
 }
 

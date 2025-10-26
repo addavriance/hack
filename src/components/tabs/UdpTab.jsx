@@ -1,5 +1,5 @@
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 
 const UdpTab = ({ data, loading, error, onRetry, port }) => {
@@ -46,12 +46,8 @@ const UdpTab = ({ data, loading, error, onRetry, port }) => {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>UDP Port Check Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
+        <CardContent>
+            <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                         <tr className="border-b">
@@ -87,8 +83,7 @@ const UdpTab = ({ data, loading, error, onRetry, port }) => {
                         </tbody>
                     </table>
                 </div>
-            </CardContent>
-        </Card>
+        </CardContent>
     )
 }
 
