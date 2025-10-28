@@ -2,7 +2,7 @@ import React from 'react'
 import {Button} from '../ui/button'
 
 const PingTab = ({data, loading, error, onRetry}) => {
-	if (loading) {
+	if (loading && !data) {
 		return (
 			<div className="text-center py-8">
 				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -38,14 +38,14 @@ const PingTab = ({data, loading, error, onRetry}) => {
 				<table className="w-full text-sm">
 					<thead>
 					<tr className="border-b">
-						<th className="text-left py-3 font-medium">Location</th>
-						<th className="text-left py-3 font-medium">Status</th>
-						<th className="text-left py-3 font-medium">Packets</th>
-						<th className="text-left py-3 font-medium">Packet Loss</th>
-						<th className="text-left py-3 font-medium">Min Time</th>
-						<th className="text-left py-3 font-medium">Avg Time</th>
-						<th className="text-left py-3 font-medium">Max Time</th>
-						<th className="text-left py-3 font-medium">IP Address</th>
+						<th className="text-left py-3 font-medium min-w-56">Location</th>
+						<th className="text-left py-3 font-medium min-w-20">Status</th>
+						<th className="text-left py-3 font-medium min-w-20">Packets</th>
+						<th className="text-left py-3 font-medium min-w-20">Packet Loss</th>
+						<th className="text-left py-3 font-medium min-w-20">Min Time</th>
+						<th className="text-left py-3 font-medium min-w-20">Avg Time</th>
+						<th className="text-left py-3 font-medium min-w-20">Max Time</th>
+						<th className="text-left py-3 font-medium min-w-20">IP Address</th>
 					</tr>
 					</thead>
 					<tbody>
@@ -54,11 +54,11 @@ const PingTab = ({data, loading, error, onRetry}) => {
 							<td className="py-3">{result.location}</td>
 							<td className="py-3">
                                     <span className={`px-2 py-1 rounded text-xs ${
-	                                    result.is_failed
+	                                    !result.is_failed && result.packetsSent === 0 ? 'bg-amber-200 text-amber-700' : result.is_failed
 		                                    ? 'bg-red-100 text-red-800'
 		                                    : 'bg-green-100 text-green-800'
                                     }`}>
-                                        {result.is_failed ? 'Failed' : 'Success'}
+                                        {!result.is_failed && result.packetsSent === 0 ? 'Pending' : result.is_failed ? 'Failed' : 'Success'}
                                     </span>
 							</td>
 							<td className="py-3">

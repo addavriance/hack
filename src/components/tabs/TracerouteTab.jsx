@@ -15,7 +15,7 @@ const TracerouteTab = ({data, loading, error, onRetry}) => {
 		return <MapPin className="h-4 w-4 text-green-500"/>
 	}
 
-	if (loading) {
+	if (loading && !data) {
 		return (
 			<div className="text-center py-8">
 				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>

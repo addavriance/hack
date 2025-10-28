@@ -66,7 +66,6 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
     const handleTabChange = async (tabId) => {
         setActiveTab(tabId)
 
-        // Если данные уже загружены, не делаем повторный запрос
         if (tabData[tabId] !== null) return
 
         setLoadingTabs(prev => ({ ...prev, [tabId]: true }))
@@ -85,12 +84,10 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
         }
     }
 
-    // Автоматическое обновление через 1.5 секунды, если нет данных для текущей вкладки
     useEffect(() => {
         const currentTabData = tabData[activeTab]
         const currentRetryCount = retryCounts[activeTab] || 0
 
-        // Если нет данных, нет ошибки, не загружается и не превышен лимит попыток (10)
         if (currentTabData === null &&
             !tabErrors[activeTab] &&
             !loadingTabs[activeTab] &&
@@ -99,7 +96,6 @@ const ResultsTabs = ({ results, onFetchTabData }) => {
             const timer = setTimeout(() => {
                 console.log(`Auto-refreshing tab ${activeTab} after 1.5s (attempt ${currentRetryCount + 1}/10)`)
 
-                // Увеличиваем счетчик попыток для текущей вкладки
                 setRetryCounts(prev => ({ ...prev, [activeTab]: currentRetryCount + 1 }))
                 
                 handleTabChange(activeTab)

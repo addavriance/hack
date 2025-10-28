@@ -167,10 +167,12 @@ const NetworkChecker = () => {
                         const pingCheck = await apiService.createPingCheck(results.target);
                         checkUid = pingCheck.uid;
                         checkType = "ping";
+
                         setResults(prev => ({
                             ...prev,
-                            checkUids: { ...prev.checkUids, ping: checkUid }
+                            checkUids: { ...prev.checkUids, ping: checkUid },
                         }));
+
                         break;
                     case "traceroute":
                         const tracerouteCheck = await apiService.createTracerouteCheck(results.target);
@@ -265,10 +267,8 @@ const NetworkChecker = () => {
                 return null;
             }
 
-            // Получаем данные проверки
             const checkData = await apiService.getCheck(checkUid);
-            
-            // Обрабатываем данные в зависимости от типа
+
             return processCheckData(checkData, checkType, tabId);
         } catch (error) {
             console.error(`Error fetching data for tab ${tabId}:`, error);
@@ -276,7 +276,6 @@ const NetworkChecker = () => {
         }
     }
 
-    // Функция для обработки данных проверки
     const processCheckData = (checkData, checkType, tabId) => {
         console.log(`Processing check data for ${tabId}:`, checkData);
         
@@ -374,16 +373,15 @@ const NetworkChecker = () => {
         return tasks.map((task, index) => {
             const result = task.result;
             const agentName = task.bound_to_agent?.name || `Agent ${index + 1}`;
-            
+
             return {
                 location: agentName,
-                result: task.is_failed ? 'Failed' : 'Success',
+                result: task.is_failed ? 'Failed' : result ? 'Success' : 'Pending',
                 code: result?.status_code || 'N/A',
-                responseTime: 'N/A',
-                ip: 'N/A',
+                url: result?.final_url || 'N/A',
                 ssl: result?.final_url && result.final_url.startsWith('https://'),
                 headers: result?.headers || {},
-                server: result?.headers?.server || 'N/A'
+                server: result?.headers?.Server || 'N/A'
             };
         });
     }
@@ -399,11 +397,11 @@ const NetworkChecker = () => {
                 location: agentName,
                 packetsSent: result?.total || 0,
                 packetsReceived: result?.live || 0,
-                packetLoss: result?.total ? `${Math.round(((result.total - (result.live || 0)) / result.total) * 100)}%` : '0%',
+                packetLoss: result?.total ? `${Math.round(((result.total - (result.live || 0)) / result.total) * 100)}%` : 'N/A',
                 minTime: result?.min_delay ? `${result.min_delay.toFixed(2)}ms` : 'N/A',
                 avgTime: result?.average_delay ? `${result.average_delay.toFixed(2)}ms` : 'N/A',
                 maxTime: result?.max_delay ? `${result.max_delay.toFixed(2)}ms` : 'N/A',
-                ip: 'N/A',
+                ip: result?.ip || 'N/A',
                 is_failed: task.is_failed
             };
         });

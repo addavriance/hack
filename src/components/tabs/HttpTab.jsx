@@ -17,12 +17,12 @@ const HttpTab = ({ data, loading, error, onRetry }) => {
         return Object.entries(headers).map(([key, value]) => (
             <div key={key} className="flex text-sm py-1 border-b border-muted last:border-b-0">
                 <span className="font-medium text-muted-foreground w-1/3">{key}:</span>
-                <span className="flex-1 font-mono text-xs">{value}</span>
+                <span className="flex-1 font-mono text-xs break-all">{value}</span>
             </div>
         ))
     }
 
-    if (loading) {
+    if (loading && !data) {
         return (
             <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -61,8 +61,6 @@ const HttpTab = ({ data, loading, error, onRetry }) => {
                             <th className="text-left py-3 font-medium">Location</th>
                             <th className="text-left py-3 font-medium">Result</th>
                             <th className="text-left py-3 font-medium">Code</th>
-                            <th className="text-left py-3 font-medium">Response Time</th>
-                            <th className="text-left py-3 font-medium">IP Address</th>
                             <th className="text-left py-3 font-medium">SSL</th>
                             <th className="text-left py-3 font-medium">Headers</th>
                         </tr>
@@ -76,17 +74,15 @@ const HttpTab = ({ data, loading, error, onRetry }) => {
                                 >
                                     <td className="py-3">{result.location}</td>
                                     <td className="py-3">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                          result.result === 'Success'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                      }`}>
-                        {result.result}
-                      </span>
+                                        <span className={`px-2 py-1 rounded text-xs ${
+                                            result.result === 'Success' 
+                                                ? 'bg-green-100 text-green-800'
+                                                : result.result === 'Failed' ? 'bg-red-100 text-red-800' : 'bg-amber-200 text-amber-700'
+                                        }`}>
+                                            {result.result}
+                                        </span>
                                     </td>
                                     <td className="py-3 font-mono">{result.code}</td>
-                                    <td className="py-3">{result.responseTime}</td>
-                                    <td className="py-3 font-mono">{result.ip}</td>
                                     <td className="py-3">
                                         {result.ssl ? (
                                             <span className="text-green-600">✓</span>

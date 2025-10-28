@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import MapView from "../MapView.jsx";
 
 const InfoTab = ({ data, loading, error, onRetry, target }) => {
-    if (loading) {
+    if (loading && !data) {
         return (
             <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -49,9 +49,10 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
                     <span className={`px-2 py-1 rounded text-xs ${
                         agentData.is_failed
                             ? 'bg-red-100 text-red-800'
-                            : 'bg-green-100 text-green-800'
+                            : agentData.ip === 'N/A' ? 'bg-amber-200 text-amber-700' : 'bg-green-100 text-green-800'
                     }`}>
-                        {agentData.is_failed ? 'Failed' : 'Success'}
+                        {agentData.is_failed ? 'Failed' :
+                            agentData.ip === 'N/A' ? 'Pending' : 'Success'}
                     </span>
                 </div>
             </CardHeader>
@@ -62,9 +63,6 @@ const InfoTab = ({ data, loading, error, onRetry, target }) => {
                     <div className="flex-1 space-y-2">
                         <InfoRow label="Target" value={target} />
                         <InfoRow label="IP Address" value={agentData.ip} />
-                        <InfoRow label="Host Name" value={agentData.hostname} />
-                        <InfoRow label="IP Range" value={agentData.ipRange} />
-                        <InfoRow label="ASN" value={agentData.asn} />
                         <InfoRow label="ISP / Organization" value={agentData.isp} />
                         <InfoRow label="Country" value={agentData.country} />
                         <InfoRow label="Region" value={agentData.region} />
